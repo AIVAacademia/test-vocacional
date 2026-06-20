@@ -251,7 +251,7 @@
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-50 p-5 rounded-2xl border border-slate-200 gap-4">
                         <div>
                             <h3 class="font-bold text-slate-800 text-sm">Base de Datos de Alumnos</h3>
-                            <p class="text-slate-500 text-xs mt-0.5">Sube comprobantes .json de estudiantes, reportes Excel para auditorías, o exporta el historial.</p>
+                            <p class="text-slate-500 text-xs mt-0.5">Sube comprobantes .json de estudiantes, reportes Excel para auditorías, o limpia la lista local.</p>
                         </div>
 
                         <div class="flex flex-wrap gap-2">
@@ -283,6 +283,13 @@
                             </button>
                             <button onclick="exportExcelFull()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5">
                                 Descargar Historial Completo
+                            </button>
+                            <!-- BOTÓN DE LIMPIEZA DE BASE DE DATOS LOCAL -->
+                            <button onclick="openClearConfirmModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Limpiar Historial
                             </button>
                         </div>
                     </div>
@@ -398,16 +405,13 @@
                         </div>
                     </div>
 
-                    <!-- Apps Script Tutorial -->
+                    <!-- Apps Script Tutorial (CORREGIDO: Cierre tradicional de textarea para evitar colapso del DOM) -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <h3 class="font-bold text-slate-800 text-sm">Código de Conexión de Apps Script</h3>
-                            <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Google Apps Script</span>
+                            <span class="bg-indigo-100 text-indigo-800 text-[11px] font-bold px-2.5 py-1 rounded-full">Google Apps Script</span>
                         </div>
-                        <textarea
-                          readOnly
-                          class="w-full h-44 bg-slate-900 text-emerald-400 p-4 rounded-xl font-mono text-xs focus:outline-none"
-                          value={`function doPost(e) {
+                        <textarea readonly class="w-full h-44 bg-slate-900 text-emerald-400 p-4 rounded-xl font-mono text-xs focus:outline-none">function doPost(e) {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var data = JSON.parse(e.postData.contents);
   
@@ -422,8 +426,7 @@
   
   return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
     .setMimeType(ContentService.MimeType.JSON);
-}`}
-                        />
+}</textarea>
                     </div>
 
                 </div>
@@ -492,7 +495,7 @@
                 </div>
                 <button onclick="closeReportView()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
@@ -599,7 +602,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE EDICIÓN / ADICIÓN DE PREGUNTAS (Sin clases de visibilidad cruzadas de Tailwind) -->
+    <!-- MODAL DE EDICIÓN / ADICIÓN DE PREGUNTAS -->
     <div id="modal-question-editor" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
         <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col animate-fade-in">
             <div class="bg-slate-900 text-white px-6 py-4">
@@ -629,6 +632,29 @@
                     Guardar Pregunta
                 </button>
                 <button onclick="closeQuestionEditorModal()" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE LIMPIEZA DE HISTORIAL (Evitando confirm() nativo de navegador) -->
+    <div id="modal-clear-confirm" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-200 p-6 space-y-6 animate-fade-in">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="font-extrabold text-slate-900 text-lg">¿Eliminar todo el Historial?</h3>
+                <p class="text-slate-500 text-xs leading-relaxed">Esta acción borrará permanentemente todos los registros locales de los alumnos evaluados. No se puede deshacer de ninguna manera.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="confirmClearHistory()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 rounded-xl shadow-md transition-all">
+                    Sí, Limpiar Todo
+                </button>
+                <button onclick="closeClearConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition-all border border-slate-200">
                     Cancelar
                 </button>
             </div>
@@ -1210,7 +1236,7 @@
                             <span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2.5 py-1 rounded-full">${sub.topArea}</span>
                         </td>
                         <td class="px-4 py-3 font-bold text-indigo-600">${sub.puntaje}</td>
-                        <td class="px-4 py-3">{syncBadge}</td>
+                        <td class="px-4 py-3">${syncBadge}</td>
                         <td class="px-4 py-3">
                             <button onclick="viewIndividualReport('${sub.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs font-bold border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-50 transition-all">
                                 Ver Reporte PDF
@@ -1440,6 +1466,27 @@
             const modal = document.getElementById('modal-report');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+        }
+
+        // --- FUNCIONES PARA CONFIRMACIÓN DE LIMPIEZA ---
+        function openClearConfirmModal() {
+            const modal = document.getElementById('modal-clear-confirm');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeClearConfirmModal() {
+            const modal = document.getElementById('modal-clear-confirm');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function confirmClearHistory() {
+            localStorage.removeItem('psicologo_historial_alumnos');
+            databaseLoaded = [];
+            renderSubmissionsTable();
+            closeClearConfirmModal();
+            showToast("Historial de alumnos borrado completamente.");
         }
     </script>
 </body>
