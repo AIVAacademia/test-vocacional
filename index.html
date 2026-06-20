@@ -3,1288 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plataforma Integradora de Test Vocacional</title>
-    <!-- Tailwind CSS para diseño moderno y responsivo -->
+    <title>Test Vocacional - Portal del Estudiante</title>
+    <!-- Tailwind CSS para diseño responsivo móvil y tablet -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fuente premium Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Motor SheetJS para procesar y exportar archivos Excel localmente -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    
+    <!-- Fuente Inter de Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;850;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Estilos específicos para aislamiento e impresión del reporte PDF oficial */
-        @media print {
-            /* Forzar fondo blanco y ocultar scrollbars */
-            html, body {
-                background-color: white !important;
-                color: black !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-            /* Ocultar absolutamente todo excepto el modal de visualización activa */
-            body > *:not(#modal-report) {
-                display: none !important;
-            }
-            /* Resetear el modal para que actúe como bloque de impresión principal de página completa */
-            #modal-report {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 100% !important;
-                height: auto !important;
-                max-height: none !important;
-                display: block !important;
-                background: transparent !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                overflow: visible !important;
-            }
-            /* Ocultar cabeceras, pie de página y botones del modal en la hoja física */
-            #modal-report > div {
-                max-width: 100% !important;
-                max-height: none !important;
-                box-shadow: none !important;
-                border: none !important;
-                background: transparent !important;
-                width: 100% !important;
-                display: block !important;
-                border-radius: 0px !important;
-            }
-            .no-print,
-            #modal-report .no-print,
-            #modal-report button {
-                display: none !important;
-            }
-            #modal-report .bg-slate-100 {
-                background: transparent !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            /* Ajuste centrado y proporcional para el lienzo del reporte */
-            #print-area {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                background: white !important;
-                position: relative !important;
-                border-radius: 0px !important;
-            }
-            /* Asegurar que el lienzo y sus elementos internos no sufran recortes por bordes redondeados */
-            #print-area, #print-area * {
-                border-radius: 0px !important;
-                box-shadow: none !important;
-                text-rendering: optimizeLegibility;
-            }
-            /* Forzar visualización de la cuadrícula de desglose de afinidades en la hoja física */
-            #pdf-breakdown-list {
-                display: grid !important;
-                background-color: #f8fafc !important;
-                border-color: #e2e8f0 !important;
-            }
-            /* Configuración estandarizada del tamaño del papel */
-            @page {
-                size: portrait;
-                margin: 2cm 1.8cm;
-            }
-        }
-        /* Scrollbar personalizado para listados y cuestionarios largos */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+        /* Desactivar scroll horizontal en móviles */
+        html, body {
+            max-width: 100%;
+            overflow-x: hidden;
         }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col justify-between text-slate-800">
 
-    <!-- ALERTA FLOTANTE / NOTIFICACIONES -->
+    <!-- MENSAJE TOAST PERSONALIZADO -->
     <div id="toast" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-indigo-950 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-indigo-800 transition-all duration-300">
         <div class="bg-indigo-900 p-1.5 rounded-lg">
             <svg class="w-5 h-5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
         </div>
-        <span id="toast-text" class="font-bold text-sm">Mensaje de alerta</span>
+        <span id="toast-text" class="font-bold text-sm">Alerta del sistema</span>
     </div>
 
-    <!-- CABECERA DE LA PLATAFORMA -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <!-- CABECERA INSTITUCIONAL -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                 </div>
                 <div>
-                    <h1 id="header-title" class="font-bold text-lg text-slate-950 leading-tight">Test Vocacional</h1>
-                    <p id="header-school-subtitle" class="text-xs text-indigo-600 font-semibold tracking-wider uppercase">Cargando Colegio...</p>
+                    <h1 class="font-bold text-lg text-slate-950 leading-tight">Test Vocacional</h1>
+                    <p class="text-xs text-indigo-600 font-semibold tracking-wider uppercase">Portal del Alumno</p>
                 </div>
-            </div>
-
-            <!-- Menú de Roles / Sesión -->
-            <div class="flex items-center gap-3">
-                <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button id="btn-role-student" onclick="setRole('student')" class="bg-white text-indigo-700 shadow-sm px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                        Estudiante
-                    </button>
-                    <button id="btn-role-admin" onclick="tryAccessAdmin()" class="text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2a3 3 0 01-3 3H6a3 3 0 01-3-3v-4a3 3 0 013-3h3a3 3 0 013 3v1M18 8.5v-2a3 3 0 00-3-3h-3m-4 14h10a2 2 0 002-2v-3a2 2 0 00-2-2H11m1-4V4m0 0l-3 3m3-3l3 3" />
-                        </svg>
-                        <span id="admin-status-text">Psicólogo (Admin) 🔒</span>
-                    </button>
-                </div>
-
-                <button id="btn-logout" onclick="logout()" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    Cerrar Sesión
-                </button>
             </div>
         </div>
     </header>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8 no-print">
+    <!-- CUERPO PRINCIPAL -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
 
-        <!-- ================= VISTA ESTUDIANTE ================= -->
-        <div id="student-view" class="space-y-6">
-            
-            <!-- 1. BIENVENIDA Y DATOS -->
-            <div id="step-welcome" class="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-slate-100 flex flex-col md:flex-row gap-8 items-center">
-                <div class="flex-1 space-y-6">
-                    <span class="bg-indigo-50 text-indigo-700 text-xs font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
-                        Conoce tu Destino Profesional
-                    </span>
-                    <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">
-                        Descubre hoy mismo tu vocación y perfil profesional.
-                    </h2>
-                    <p class="text-slate-600 text-sm md:text-base leading-relaxed">
-                        Evaluamos tus preferencias mediante un algoritmo asertivo. Al culminar el test, la plataforma generará un reporte oficial listo para la firma física o digital del departamento de psicología.
-                    </p>
+        <!-- PASO 1: REGISTRO DE DATOS -->
+        <div id="step-welcome" class="bg-white rounded-3xl p-6 md:p-12 shadow-xl border border-slate-100 flex flex-col md:flex-row gap-8 items-center">
+            <div class="flex-grow space-y-6">
+                <span class="bg-indigo-50 text-indigo-700 text-xs font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
+                    Evaluación Vocacional
+                </span>
+                <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                    Descubre tus fortalezas y afinidades de carrera.
+                </h2>
+                <p id="welcome-colegio-sub" class="text-slate-600 text-sm md:text-base leading-relaxed">
+                    Bienvenido a la plataforma oficial de orientación del colegio. Responde las preguntas de forma sincera para obtener tu reporte vocacional.
+                </p>
+
+                <!-- Formulario de Datos Académicos -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                        Introduce tus datos académicos:
+                    </h3>
                     
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
-                        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-                            Completa tu información académica:
-                        </h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre Completo (Mayúsculas)</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre Completo</label>
                             <input
                               type="text"
-                              id="student-name"
-                              oninput="this.value = this.value.toUpperCase()"
-                              placeholder="JUAN PÉREZ MELÉNDEZ"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-semibold"
+                              id="input-student-name"
+                              placeholder="Juan Pérez Meléndez"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-medium"
                             />
-                          </div>
-                          <div>
+                        </div>
+                        <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Grado de Secundaria</label>
                             <select
-                              id="student-grade-select"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-semibold"
+                              id="select-student-grade"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-medium"
                             >
                               <option value="">Selecciona tu grado...</option>
-                              <option value="1er Año de Secundaria">1er Año de Secundaria</option>
-                              <option value="2do Año de Secundaria">2do Año de Secundaria</option>
-                              <option value="3er Año de Secundaria">3er Año de Secundaria</option>
-                              <option value="4to Año de Secundaria">4to Año de Secundaria</option>
-                              <option value="5to Año de Secundaria">5to Año de Secundaria</option>
+                              <option value="1ER AÑO DE SECUNDARIA">1er Año de Secundaria</option>
+                              <option value="2DO AÑO DE SECUNDARIA">2do Año de Secundaria</option>
+                              <option value="3ER AÑO DE SECUNDARIA">3er Año de Secundaria</option>
+                              <option value="4TO AÑO DE SECUNDARIA">4to Año de Secundaria</option>
+                              <option value="5TO AÑO DE SECUNDARIA">5to Año de Secundaria</option>
                             </select>
-                          </div>
-                          
-                          <!-- Selección de Secciones de la A a la E con opción "Otro" -->
-                          <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sección Escolar</label>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Sección -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Sección</label>
                             <select
-                              id="student-section-select"
+                              id="select-student-section"
                               onchange="toggleCustomSectionInput()"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-semibold"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-medium"
                             >
                               <option value="">Selecciona tu sección...</option>
-                              <option value="Sección A">Sección A</option>
-                              <option value="Sección B">Sección B</option>
-                              <option value="Sección C">Sección C</option>
-                              <option value="Sección D">Sección D</option>
-                              <option value="Sección E">Sección E</option>
-                              <option value="custom">Otro (F, G, H, I, etc.)</option>
+                              <option value="SECCIÓN A">Sección A</option>
+                              <option value="SECCIÓN B">Sección B</option>
+                              <option value="SECCIÓN C">Sección C</option>
+                              <option value="SECCIÓN D">Sección D</option>
+                              <option value="SECCIÓN E">Sección E</option>
+                              <option value="OTRO">Otro (Escribir...)</option>
                             </select>
-                          </div>
-
-                          <!-- Input Auxiliar para otra Sección en MAYÚSCULAS -->
-                          <div id="custom-section-container" class="hidden">
-                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Especifica Sección (Ej. F)</label>
+                        </div>
+                        <div id="custom-section-container" class="hidden">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Escribe tu Sección (F, G, H, I...)</label>
                             <input
                               type="text"
-                              id="student-custom-section"
-                              oninput="this.value = this.value.toUpperCase()"
-                              placeholder="Escribe la letra en mayúsculas"
-                              maxlength="5"
-                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-semibold"
+                              id="input-custom-section"
+                              placeholder="Ej. SECCIÓN F"
+                              oninput="forceUppercaseInput(this)"
+                              class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800 font-mono font-bold text-center"
                             />
-                          </div>
-                        </div>
-                    </div>
-
-                    <button
-                      onclick="startTest()"
-                      class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                    >
-                      Comenzar Test Vocacional
-                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                </div>
-
-                <div class="hidden md:flex flex-1 justify-center">
-                    <div class="relative">
-                        <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full blur opacity-25"></div>
-                        <div class="relative bg-white p-6 rounded-full shadow-2xl">
-                            <svg class="w-56 h-56 text-indigo-600" viewBox="0 0 200 200" fill="none">
-                                <circle cx="100" cy="100" r="80" fill="#f0fdf4" />
-                                <path d="M100 40C66.86 40 40 66.86 40 100C40 133.14 66.86 160 100 160C133.14 160 160 133.14 160 100" stroke="#4f46e5" strokeWidth="4" strokeLinecap="round" />
-                                <circle cx="100" cy="100" r="15" fill="#4f46e5" />
-                                <line x1="100" y1="100" x2="140" y2="70" stroke="#c084fc" strokeWidth="4" strokeLinecap="round" />
-                                <path d="M140 120H150M140 135H145M140 105H155" stroke="#4f46e5" strokeWidth="3" strokeLinecap="round" />
-                            </svg>
                         </div>
                     </div>
                 </div>
+
+                <button
+                  onclick="startTest()"
+                  class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                >
+                  Comenzar Evaluación
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
             </div>
-
-            <!-- 2. CUESTIONARIO DINÁMICO (PREGUNTAS EN BLOQUES) -->
-            <div id="step-quiz" class="hidden space-y-6">
-                <!-- Barra de Progreso y Datos -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-4">
-                    <div>
-                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">PROGRESO DEL TEST</span>
-                        <h3 id="quiz-block-title" class="font-extrabold text-slate-800 text-lg">Bloque 1 de 3</h3>
-                    </div>
-                    
-                    <div class="flex-1 max-w-md">
-                        <div class="bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
-                            <div id="quiz-progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
-                        </div>
-                        <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
-                            <span id="quiz-answered-count">0 respondidas</span>
-                            <span id="quiz-total-count">15 preguntas en total</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contenedor Dinámico de Preguntas de este bloque -->
-                <div id="questions-block-container" class="space-y-4">
-                    <!-- Inyección dinámica -->
-                </div>
-
-                <!-- Botones de navegación del test -->
-                <div class="flex justify-between items-center py-4">
-                    <button id="btn-quiz-prev" onclick="changeQuizBlock(-1)" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-40 flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Atrás
-                    </button>
-
-                    <button id="btn-quiz-next" onclick="changeQuizBlock(1)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
-                        Siguiente Sección
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 3. PANEL DE RESULTADOS OBTENIDOS -->
-            <div id="step-results" class="hidden space-y-8">
-                <div class="bg-white rounded-3xl p-8 md:p-10 border border-slate-200 shadow-xl space-y-6 text-center">
-                    <div class="inline-flex bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full font-bold text-xs gap-1.5 items-center mx-auto uppercase">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-                        ¡Cálculo Vocacional Exitoso!
-                    </div>
-                    
-                    <h2 class="text-3xl font-extrabold text-slate-900">¡Felicidades, <span id="results-student-name" class="uppercase font-black text-slate-950">Estudiante</span>!</h2>
-                    <p class="text-slate-500 max-w-lg mx-auto text-sm leading-relaxed">
-                        Hemos procesado tus respuestas comparándolas con nuestro algoritmo de 5 áreas vocacionales fundamentales. Aquí están los resultados:
-                    </p>
-
-                    <!-- Área más destacada -->
-                    <div class="max-w-xl mx-auto bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl text-left">
-                        <div class="absolute top-0 right-0 transform translate-x-4 -translate-y-4 opacity-10">
-                            <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0z" />
-                            </svg>
-                        </div>
-
-                        <span class="text-xs font-bold text-indigo-300 uppercase tracking-widest">Carrera Altamente Recomendada</span>
-                        <h3 id="results-top-area" class="text-2xl font-black mt-2 mb-4 text-white">Cargando área...</h3>
-                        <div class="flex justify-between items-center bg-white/10 p-4 rounded-xl border border-white/10">
-                            <span class="text-sm text-slate-300">Afinidad Vocacional</span>
-                            <span id="results-top-percentage" class="text-2xl font-black text-emerald-400">0%</span>
-                        </div>
-                    </div>
-
-                    <!-- Lista de Afinidades Secundarias -->
-                    <div id="other-results-container" class="max-w-xl mx-auto space-y-3 pt-4">
-                        <!-- Inyectado dinámicamente -->
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center pt-6 border-t border-slate-100">
-                        <button onclick="openReportView()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Ver Reporte PDF Oficial
-                        </button>
-
-                        <button onclick="resetTest()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-all">
-                            Volver a empezar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
-        <!-- ================= VISTA ADMINISTRATIVA (PSICÓLOGO) ================= -->
-        <div id="admin-view" class="hidden space-y-6">
-            <div class="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-md">
+        <!-- PASO 2: CUESTIONARIO DINÁMICO EN BLOQUES -->
+        <div id="step-quiz" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">PROGRESO DEL TEST</span>
+                    <h3 id="quiz-block-title" class="font-extrabold text-slate-800 text-lg">Bloque 1</h3>
+                </div>
                 
-                <!-- Navegación del Panel de Control -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-2xl font-black text-slate-900">Panel de Control de Orientación</h2>
-                            <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
-                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                                Sesión de Psicólogo
-                            </span>
-                        </div>
-                        <p class="text-slate-500 text-xs mt-1">Configura el test, carga hojas de Excel, descarga reportes y personaliza la institución.</p>
+                <div class="flex-1 max-w-md">
+                    <div class="bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+                        <div id="quiz-progress-bar" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
-                    
-                    <div class="flex flex-wrap gap-2">
-                        <button id="tab-btn-questions" onclick="setAdminTab('questions')" class="bg-indigo-600 text-white shadow px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                            Gestión de Cuestionario
-                        </button>
-                        <button id="tab-btn-submissions" onclick="setAdminTab('submissions')" class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                            Historial y Resultados
-                        </button>
-                        <button id="tab-btn-integration" onclick="setAdminTab('integration')" class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                            Integración & Configuración
-                        </button>
+                    <div class="flex justify-between text-xs font-bold text-slate-400 mt-2">
+                        <span id="quiz-answered-count">0 respondidas</span>
+                        <span id="quiz-total-count">0 en total</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- SUB-TAB 1: GESTIÓN DE PREGUNTAS (CRUD + GUÍA DE EXCEL) -->
-                <div id="admin-tab-questions" class="space-y-6">
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-50 p-5 rounded-2xl border border-slate-200 gap-4">
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-sm">Banco de Preguntas del Test</h3>
-                            <p class="text-slate-500 text-xs mt-0.5">Agrega preguntas de forma individual o carga masivamente usando un archivo de Excel.</p>
-                        </div>
-                        
-                        <div class="flex flex-wrap gap-2">
-                            <input type="file" id="excel-file-input" onchange="handleExcelImport(event)" accept=".xlsx, .xls, .csv" class="hidden" />
-                            
-                            <button onclick="document.getElementById('excel-file-input').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                Cargar de Excel (.xlsx)
-                            </button>
+            <!-- Contenedor de Preguntas del Bloque -->
+            <div id="questions-block-container" class="space-y-4"></div>
 
-                            <button onclick="openAddQuestionModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-                                </svg>
-                                Nueva Pregunta Manual
-                            </button>
-                        </div>
+            <!-- Botones de Navegación del Test -->
+            <div class="flex justify-between items-center py-4">
+                <button id="btn-quiz-prev" onclick="changeQuizBlock(-1)" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-40 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Atrás
+                </button>
+
+                <button id="btn-quiz-next" onclick="changeQuizBlock(1)" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-xl font-bold shadow-md transition-all flex items-center gap-2">
+                    Siguiente
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- PASO 3: PANTALLA DE CONFIRMACIÓN -->
+        <div id="step-results" class="hidden space-y-6">
+            <div class="bg-white rounded-3xl p-8 md:p-12 border border-slate-200 shadow-xl space-y-8 text-center max-w-2xl mx-auto">
+                
+                <div class="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner border border-emerald-100">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="inline-flex bg-emerald-50 text-emerald-800 px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-wider">
+                        Cuestionario Completado con Éxito
                     </div>
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight leading-none">
+                        ¡Gracias, <span id="results-student-name" class="text-indigo-600 font-black">Estudiante</span>!
+                    </h2>
+                </div>
 
-                    <!-- INFORMACIÓN DE ESTRUCTURACIÓN DE EXCEL -->
-                    <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-amber-950 space-y-4">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <h4 class="font-extrabold text-sm text-amber-950">Guía de Estructuración del Archivo Excel de Preguntas</h4>
-                        </div>
-                        <p class="text-slate-600 text-xs leading-relaxed font-medium">
-                            Para realizar la carga masiva del cuestionario, prepara un documento de Excel en el cual la fila superior posea exactamente las siguientes cabeceras estructurales:
-                        </p>
-
-                        <!-- Mock visual de la hoja de Excel -->
-                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-w-md">
-                            <div class="bg-slate-100 px-4 py-1.5 border-b border-slate-200 text-[10px] font-bold text-slate-500 tracking-wider">ESTRUCTURA DE HOJA EXCEL REQUERIDA</div>
-                            <table class="min-w-full divide-y divide-slate-200 text-[11px] text-left">
-                                <thead class="bg-slate-50">
-                                    <tr>
-                                        <th class="px-4 py-2 font-bold text-slate-400 border-r border-slate-200">Fila</th>
-                                        <th class="px-4 py-2 font-extrabold text-indigo-700 border-r border-slate-200 bg-indigo-50/50">Pregunta (Columna A)</th>
-                                        <th class="px-4 py-2 font-extrabold text-indigo-700 bg-indigo-50/50">Área (Columna B)</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100 text-slate-600">
-                                    <tr>
-                                        <td class="px-4 py-1.5 font-bold bg-slate-50 border-r border-slate-200">1</td>
-                                        <td class="px-4 py-1.5 italic text-slate-400 border-r border-slate-200">¿Te apasiona programar software...?</td>
-                                        <td class="px-4 py-1.5 italic text-slate-400">Ingeniería y Tecnología</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-1.5 font-bold bg-slate-50 border-r border-slate-200">2</td>
-                                        <td class="px-4 py-1.5 border-r border-slate-200">¿Te gustaría investigar curas para enfermedades?</td>
-                                        <td class="px-4 py-1.5">Ciencias de la Salud</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p class="text-[11px] text-slate-500 italic">
-                            *Áreas válidas compatibles: 
-                            <strong>Ingeniería y Tecnología</strong>, 
-                            <strong>Ciencias de la Salud</strong>, 
-                            <strong>Negocios y Administración</strong>, 
-                            <strong>Derecho y Ciencias Sociales</strong> o 
-                            <strong>Arte y Diseño</strong>.
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4 text-left">
+                    <p class="text-slate-700 text-sm md:text-base leading-relaxed font-medium">
+                        Tus respuestas han sido procesadas y enviadas de forma segura al <strong class="text-slate-900 font-bold">Departamento de Psicología</strong> del plantel educativo.
+                    </p>
+                    <div class="flex gap-3 items-start text-xs text-slate-500 leading-relaxed border-t border-slate-200/60 pt-4">
+                        <span class="text-lg">💡</span>
+                        <p>
+                            El psicólogo del plantel educativo evaluará tu perfil, firmará el reporte PDF oficial y te entregará el diagnóstico impreso durante tus sesiones programadas de consejería profesional.
                         </p>
                     </div>
-
-                    <!-- Lista de preguntas -->
-                    <div id="questions-list" class="grid grid-cols-1 gap-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Las preguntas se inyectan dinámicamente -->
-                    </div>
                 </div>
 
-                <!-- SUB-TAB 2: BASE DE DATOS DE EXÁMENES -->
-                <div id="admin-tab-submissions" class="hidden space-y-6">
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-indigo-900 text-xs">
-                        💡 Todos los exámenes realizados por los alumnos del colegio se almacenan localmente. Puedes previsualizar e imprimir su reporte PDF individual en cualquier momento.
-                    </div>
-
-                    <!-- BANNER DE REVISIÓN EXTERNA (EXCEL) -->
-                    <div id="imported-banner" class="hidden bg-amber-50 border border-amber-200 p-4 rounded-2xl text-amber-950 text-xs flex justify-between items-center flex-wrap gap-2 shadow-sm animate-pulse">
-                        <div class="flex items-center gap-2">
-                            <span class="flex h-2 w-2 relative">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                            </span>
-                            <span id="imported-count-text" class="font-extrabold text-[11px] uppercase tracking-wider">Registros cargados desde Excel externo para revisión.</span>
-                        </div>
-                        <button onclick="restoreLocalSubmissions()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2 rounded-xl transition-all text-[11px] uppercase tracking-wider shadow">
-                            Restaurar Historial Local
-                        </button>
-                    </div>
-
-                    <!-- BARRA DE ACCIONES EXCEL (DESCARGA / RE-ANÁLISIS) -->
-                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div class="space-y-1">
-                            <h4 class="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                                Descargas y Revisión de Reportes
-                            </h4>
-                            <p class="text-[11px] text-slate-500">Exporta las evaluaciones del día en formato Excel o vuelve a subir un reporte previo para re-analizar diagnósticos.</p>
-                        </div>
-                        <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                            <!-- Input oculto para subir y re-analizar -->
-                            <input type="file" id="reimport-excel-input" onchange="importExcelForReview(event)" accept=".xlsx, .xls, .csv" class="hidden" />
-                            
-                            <button onclick="exportDailyToExcel()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow flex-grow md:flex-grow-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Descargar Excel del Día
-                            </button>
-
-                            <button onclick="exportAllToExcel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-1.5 flex-grow md:flex-grow-0">
-                                Descargar Historial Completo
-                            </button>
-
-                            <button onclick="document.getElementById('reimport-excel-input').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow flex-grow md:flex-grow-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                Re-analizar Excel (Subir)
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-200 text-left">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Alumno</th>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Grado / Sección</th>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Área Predominante</th>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Afinidad</th>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Sincronización</th>
-                                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="submissions-tbody" class="bg-white divide-y divide-slate-200 text-slate-700 text-sm">
-                                <!-- Filas de historial inyectadas -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- SUB-TAB 3: INTEGRACIÓN Y CONFIGURACIÓN GLOBAL -->
-                <div id="admin-tab-integration" class="hidden space-y-8">
-                    <!-- Configuración Nombre Colegio e Información Evaluador -->
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="space-y-4">
-                            <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider">Configuración Institucional</h4>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre del Colegio (Para Encabezados y Reportes)</label>
-                                <input
-                                  type="text"
-                                  id="config-school-name"
-                                  placeholder="COLEGIO NACIONAL DE LA REPÚBLICA"
-                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 font-semibold bg-white text-slate-800"
-                                />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre Completo del Psicólogo (Firmante)</label>
-                                <input
-                                  type="text"
-                                  id="config-psico-name"
-                                  placeholder="LIC. CARLOS MENDOZA"
-                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 font-semibold bg-white text-slate-800"
-                                />
-                            </div>
-                            <button onclick="saveInstitutionalConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition-all">
-                                Guardar Información General
-                            </button>
-                        </div>
-
-                        <!-- Seguridad / Cambio de Clave -->
-                        <div class="space-y-4 border-t md:border-t-0 md:border-l border-slate-200 pt-6 md:pt-0 md:pl-6">
-                            <h4 class="font-extrabold text-slate-900 text-sm uppercase tracking-wider">Seguridad de la Cuenta</h4>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nueva Contraseña de Acceso</label>
-                                <input
-                                  type="password"
-                                  id="config-new-password"
-                                  placeholder="Escribe la nueva clave"
-                                  class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 bg-white"
-                                />
-                            </div>
-                            <button onclick="updatePasswordConfig()" class="bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition-all">
-                                Actualizar Contraseña
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Configuración de Google Sheets -->
-                    <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 space-y-4">
-                        <div>
-                            <h4 class="font-bold text-indigo-950 text-sm">Configuración de Envío API (Google Sheets)</h4>
-                            <p class="text-xs text-indigo-800 mt-1">Ingresa la URL de la Web App generada desde tu script de Google Sheets. Al guardar, los resultados de los estudiantes se enviarán en tiempo real.</p>
-                        </div>
-                        
-                        <div class="flex flex-col md:flex-row gap-3">
-                            <input
-                              type="text"
-                              id="google-sheets-url-input"
-                              placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                              class="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-xs bg-white"
-                            />
-                            <button onclick="saveSheetsUrlConfig()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow shrink-0">
-                              Guardar Conexión
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                          <div class="bg-emerald-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                          <h4 class="font-bold text-slate-900 text-sm">Crea tu Google Sheets</h4>
-                          <p class="text-slate-600 text-xs leading-relaxed">Abre una nueva hoja de cálculo vacía desde tu Google Drive.</p>
-                        </div>
-                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                          <div class="bg-indigo-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                          <h4 class="font-bold text-slate-900 text-sm">Pega el Script (API)</h4>
-                          <p class="text-slate-600 text-xs leading-relaxed">Entra a Extensiones &gt; Apps Script y pega el código que proporcionamos abajo.</p>
-                        </div>
-                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2">
-                          <div class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                          <h4 class="font-bold text-slate-900 text-sm">Implementa como Web App</h4>
-                          <p class="text-slate-600 text-xs leading-relaxed">Despliega el script como aplicación web con acceso general para habilitar la sincronización.</p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                          <h3 class="font-bold text-slate-800 text-sm">Código Automatizador Apps Script</h3>
-                          <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">Apps Script</span>
-                        </div>
-                        <textarea
-                          readonly
-                          onclick="this.select()"
-                          class="w-full h-40 bg-slate-900 text-emerald-400 p-4 rounded-xl font-mono text-xs focus:outline-none cursor-pointer"
-                        >function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  
-  sheet.appendRow([
-    new Date(), 
-    data.alumno, 
-    data.grado, 
-    data.resultadoTop, 
-    data.porcentaje
-  ]);
-  
-  return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
-    .setMimeType(ContentService.MimeType.JSON);
-}</textarea>
-                    </div>
-                </div>
-
-                <!-- SECCIÓN DIGITALIZACIÓN DE FIRMA DEL PSICÓLOGO -->
-                <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200 mt-8 space-y-4">
-                    <h3 class="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <!-- Herramientas de Respaldo JSON -->
+                <div id="backup-container" class="hidden bg-slate-100/50 border border-slate-200 p-5 rounded-2xl text-left space-y-4">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <svg class="w-4.5 h-4.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
-                        Digitalización de Firma del Psicólogo
-                    </h3>
-                    <p class="text-slate-500 text-xs leading-relaxed">Dibuja tu firma en el panel interactivo o sube una imagen limpia en formato PNG (preferiblemente transparente) para estampar automáticamente en los reportes.</p>
-                    
-                    <div class="flex flex-col md:flex-row gap-6 items-center">
-                        <!-- Canvas para firma digital -->
-                        <div class="bg-white border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden shadow-inner max-w-sm w-full">
-                            <canvas id="signature-canvas" width="350" height="150" class="cursor-crosshair w-full bg-slate-50"></canvas>
-                            <div class="bg-slate-200 px-4 py-2 flex justify-between items-center">
-                                <button onclick="clearSignatureCanvas()" class="text-slate-600 hover:text-slate-900 text-xs font-bold transition-all">Limpiar Lienzo</button>
-                                
-                                <div class="flex items-center gap-2">
-                                    <input type="file" id="sig-image-file" onchange="handleSignatureImageUpload(event)" accept="image/png, image/jpeg" class="hidden" />
-                                    <button onclick="document.getElementById('sig-image-file').click()" class="text-indigo-600 hover:text-indigo-800 text-xs font-bold transition-all">Subir PNG</button>
-                                    <button onclick="saveSignatureCanvas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold px-3 py-1.5 rounded shadow-sm transition-all">Guardar Dibujo</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Panel de visualización de la firma en uso -->
-                        <div class="space-y-2 flex-grow">
-                            <h4 class="font-bold text-xs text-slate-500 uppercase tracking-wider">Firma Activa:</h4>
-                            <div id="signature-preview-container" class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 max-w-xs flex justify-center">
-                                <span class="text-slate-400 text-xs">No hay firma cargada en el sistema.</span>
-                            </div>
-                        </div>
+                        Descargar Comprobante de Respuestas (.json)
+                    </h4>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Si tu psicólogo ha habilitado esta opción, puedes descargar tu comprobante de respuestas en formato .json.
+                    </p>
+                    <div class="flex justify-center">
+                        <button onclick="downloadBackupJson()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-6 py-3.5 rounded-xl shadow-md transition-all flex items-center gap-2 justify-center">
+                            Descargar Comprobante (.json)
+                        </button>
                     </div>
                 </div>
-
             </div>
         </div>
 
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-white border-t border-slate-200 py-6 no-print">
+    <footer class="bg-white border-t border-slate-200 py-6">
         <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
             <p>© 2026 Plataforma Integradora Educativa. Todos los derechos reservados.</p>
-            <div class="flex gap-4 font-semibold text-slate-600">
-                <span>Privacidad de Datos</span>
+            <div class="flex gap-4">
+                <span>Protección de Datos</span>
                 <span>·</span>
-                <span>Uso Escolar</span>
+                <span>Uso Estudiantil</span>
             </div>
         </div>
     </footer>
 
-
-    <!-- ================= MODALES DE LA PLATAFORMA ================= -->
-
-    <!-- MODAL 1: PREVISUALIZACIÓN DE REPORTE TIPO PDF (APTO PARA IMPRIMIR) -->
-    <div id="modal-report" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
-            
-            <div class="bg-slate-900 text-white px-6 py-4 flex justify-between items-center no-print">
-                <div>
-                    <h3 class="font-bold text-sm">Vista Previa del Reporte de Orientación</h3>
-                    <p class="text-[10px] text-slate-400">Este documento simula el formato de impresión oficial para firmas.</p>
-                </div>
-                <button onclick="closeReportView()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Contenido que será impreso en la hoja física -->
-            <div class="p-8 overflow-y-auto space-y-6 flex-grow bg-slate-100">
-                <div id="print-area" class="bg-white p-8 rounded-xl shadow-md border border-slate-200 max-w-xl mx-auto space-y-8 text-left relative">
-                    
-                    <!-- Membrete Escolar -->
-                    <div class="flex justify-between items-start border-b-2 border-indigo-900 pb-4">
-                        <div class="space-y-1">
-                            <h2 id="pdf-school-header" class="font-black text-indigo-950 text-base uppercase font-extrabold tracking-tight">COLEGIO NACIONAL DE LA REPÚBLICA</h2>
-                            <p class="text-[9px] text-slate-500 font-semibold tracking-wider uppercase">DEPARTAMENTO DE PSICOLOGÍA Y BIENESTAR ESTUDIANTIL</p>
-                        </div>
-                        <div class="bg-slate-100 text-[10px] text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 font-bold">
-                            Código: REG-VOC-2026
-                        </div>
-                    </div>
-
-                    <!-- Encabezado de Informe -->
-                    <div class="text-center">
-                        <h3 class="font-black text-slate-900 text-lg tracking-tight uppercase">Informe de Orientación Vocacional</h3>
-                        <p class="text-[10px] text-slate-500 font-bold">Diagnóstico Automatizado del Algoritmo</p>
-                    </div>
-
-                    <!-- Campos de Datos de Alumno -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-y-2 text-xs">
-                        <div>
-                            <span class="font-bold text-slate-400 block uppercase text-[9px]">Estudiante:</span>
-                            <span id="pdf-student-name" class="font-bold text-slate-900 uppercase">Estudiante Apellido</span>
-                        </div>
-                        <div>
-                            <span class="font-bold text-slate-400 block uppercase text-[9px]">Sección Escolar:</span>
-                            <span id="pdf-student-grade" class="font-bold text-slate-900">Grado</span>
-                        </div>
-                        <div class="col-span-2 pt-2 border-t border-slate-200/50 mt-1">
-                            <span class="font-bold text-slate-400 block uppercase text-[9px]">Metodología Utilizada:</span>
-                            <span class="font-semibold text-slate-700">Modelo Ponderado Vocacional Multi-Categorías (Carga Dinámica de Cuestionario)</span>
-                        </div>
-                    </div>
-
-                    <!-- Diagnóstico del Test -->
-                    <div class="space-y-3">
-                        <h4 class="font-black text-slate-950 text-xs uppercase tracking-wider border-b border-slate-200 pb-1">Diagnóstico Profesional</h4>
-                        
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            De acuerdo con las preferencias declaradas en la evaluación de orientación vocacional asistida por software, el alumno muestra un perfil predominantemente inclinado hacia el área de <strong id="pdf-result-area">Área</strong> con un porcentaje de afinidad del <strong id="pdf-result-percent">0%</strong>.
-                        </p>
-
-                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 flex justify-between items-center">
-                            <div>
-                                <span class="font-bold text-indigo-900 text-xs uppercase block">Área de Inclinación</span>
-                                <span id="pdf-card-area" class="font-black text-indigo-950 text-base">Área de Diagnóstico</span>
-                            </div>
-                            <div class="text-right">
-                                <span class="font-bold text-indigo-900 text-xs uppercase block">Porcentaje</span>
-                                <span id="pdf-card-percent" class="font-black text-emerald-600 text-xl">0%</span>
-                            </div>
-                        </div>
-
-                        <!-- DESGLOSE DETALLADO COMPLETO DE ÁREAS (PARA RE-ANÁLISIS) -->
-                        <div id="pdf-breakdown-container" class="mt-4 space-y-2 hidden">
-                            <span class="font-bold text-slate-400 block uppercase text-[9px]">Análisis Detallado de Afinidades:</span>
-                            <div id="pdf-breakdown-list" class="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[11px] text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                                <!-- Se inyecta dinámicamente -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Firma e Identificación final -->
-                    <div class="pt-8 border-t border-slate-200 flex justify-between items-end gap-4">
-                        <div class="text-left">
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">FECHA DE EMISIÓN</p>
-                            <p id="pdf-date-issued" class="font-extrabold text-xs text-slate-800">Fecha Actual</p>
-                        </div>
-
-                        <div class="text-center flex flex-col items-center max-w-xs">
-                            <div id="pdf-signature-placement" class="h-12 w-32 flex items-center justify-center mb-1">
-                                <!-- Inyección de la firma digitalizada o aviso -->
-                                <div class="text-[8px] text-rose-500 font-bold border-2 border-dashed border-rose-300 rounded px-2 py-1 bg-rose-50">
-                                    Firma Sin Cargar
-                                </div>
-                            </div>
-                            <div class="border-t border-slate-400 w-36 pt-1">
-                                <p id="pdf-psico-name" class="font-bold text-slate-900 text-[10px] uppercase font-bold">Psicólogo Colegiado</p>
-                                <p class="text-[8px] text-slate-500 font-semibold tracking-wider">Psicólogo del Colegio</p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- Botones de Impresión / Guardado PDF -->
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3 no-print">
-                <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4" />
-                    </svg>
-                    Imprimir Reporte / Guardar PDF
-                </button>
-                <button onclick="closeReportView()" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
-                    Cerrar Reporte
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: GESTIÓN DE PREGUNTA INDIVIDUAL (CREAR / EDITAR) -->
-    <div id="modal-question-editor" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-100 flex flex-col">
-            <div class="bg-slate-900 text-white px-6 py-4">
-                <h3 id="question-editor-title" class="font-bold text-sm">Añadir Nueva Pregunta</h3>
-                <p class="text-[10px] text-slate-400">Define la lógica de ponderación y asigna el área vocacional correspondiente.</p>
-            </div>
-
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Pregunta Vocacional</label>
-                    <textarea id="input-question-text" placeholder="Ej. ¿Te apasiona comprender el comportamiento de los animales o plantas?" class="w-full h-24 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 bg-white font-medium"></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Área de Carrera Vocacional</label>
-                    <select id="select-question-area" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-700 font-semibold">
-                        <option value="Ingeniería y Tecnología">Ingeniería y Tecnología</option>
-                        <option value="Ciencias de la Salud">Ciencias de la Salud</option>
-                        <option value="Negocios y Administración">Negocios y Administración</option>
-                        <option value="Derecho y Ciencias Sociales">Derecho y Ciencias Sociales</option>
-                        <option value="Arte y Diseño">Arte y Diseño</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3">
-                <button onclick="saveQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition-all">
-                    Guardar Pregunta
-                </button>
-                <button onclick="closeQuestionEditorModal()" class="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs px-5 py-2.5 rounded-xl transition-all">
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 3: INICIO DE SESIÓN DE SEGURIDAD (PSICÓLOGO) -->
-    <div id="modal-auth" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl border border-slate-200 flex flex-col">
-            <div class="bg-indigo-950 text-white px-6 py-5 text-center">
-                <div class="w-12 h-12 bg-indigo-900 text-indigo-300 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <h3 class="font-extrabold text-base tracking-tight">Acceso Privado de Psicología</h3>
-                <p class="text-[11px] text-indigo-200 mt-1">Ingresa para administrar el test.</p>
-            </div>
-
-            <div class="p-6 space-y-4">
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Nombre del Psicólogo</label>
-                        <input
-                          type="text"
-                          id="input-auth-name"
-                          placeholder="Lic. Carlos Mendoza"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800"
-                        />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Contraseña de Acceso</label>
-                        <input
-                          type="password"
-                          id="input-auth-code"
-                          placeholder="••••••••"
-                          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 text-center font-mono text-lg text-slate-800"
-                        />
-                    </div>
-
-                    <!-- Recordar sesión -->
-                    <div class="flex items-center gap-2 pt-1">
-                        <input type="checkbox" id="auth-remember-me" class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4" />
-                        <label for="auth-remember-me" class="text-xs font-bold text-slate-500 uppercase cursor-pointer">Recordar sesión en este dispositivo</label>
-                    </div>
-
-                    <p id="auth-error-msg" class="hidden text-rose-600 text-xs font-semibold text-center mt-2 animate-pulse">
-                      ⚠️ Credenciales de acceso incorrectas.
-                    </p>
-                    
-                    <div class="mt-4 bg-slate-50 p-3 rounded-lg border border-slate-100 text-center">
-                      <p class="text-[10px] text-slate-400 font-bold uppercase">Nota para el Evaluador:</p>
-                      <p class="text-xs text-slate-600">La clave por defecto es: <strong class="font-mono text-indigo-700 font-bold text-sm">PSI2026</strong></p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex justify-end gap-2">
-                <button onclick="verifyAccessCode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl shadow-md transition-all">
-                    Verificar y Entrar
-                </button>
-                <button onclick="closeAuthModal()" class="px-4 py-3 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all">
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ================= SISTEMA DE CONTROL DE DATOS Y LÓGICA (JS) ================= -->
+    <!-- BANCO DE 60 PREGUNTAS DESDE TEST_VOCACIONAL (HOJA_TEST) -->
     <script>
-        // === BANCO DE PREGUNTAS INICIAL ===
-        let PREGUNTAS_INICIALES = [
-            { id: 1, texto: "¿Te apasiona armar, desarmar o entender cómo funcionan los aparatos tecnológicos?", area: "Ingeniería y Tecnología" },
-            { id: 2, texto: "¿Disfrutas leyendo sobre anatomía, enfermedades o el cuidado de la salud?", area: "Ciencias de la Salud" },
-            { id: 3, texto: "¿Te resulta fácil liderar equipos de trabajo o proponer ideas de negocio?", area: "Negocios y Administración" },
-            { id: 4, texto: "¿Te gustaría defender los derechos de las personas utilizando las leyes?", area: "Derecho y Ciencias Sociales" },
-            { id: 5, texto: "¿Disfrutas dibujando, diseñando digitalmente o creando composiciones artísticas?", area: "Arte y Diseño" },
-            { id: 6, texto: "¿Te interesa programar software, crear páginas web o desarrollar apps en tu tiempo libre?", area: "Ingeniería y Tecnología" },
-            { id: 7, texto: "¿Te sientes cómodo en entornos hospitalarios, veterinarios o laboratorios clínicos?", area: "Ciencias de la Salud" },
-            { id: 8, texto: "¿Te atrae llevar la contabilidad, presupuestos o finanzas de un proyecto?", area: "Negocios y Administración" },
-            { id: 9, texto: "¿Te interesan los problemas sociales y políticos de tu comunidad y del mundo?", area: "Derecho y Ciencias Sociales" },
-            { id: 10, texto: "¿Te gustaría aprender a tocar un instrumento musical de forma profesional o componer música?", area: "Arte y Diseño" },
-            { id: 11, texto: "¿Te genera curiosidad el diseño de estructuras de edificios, carreteras o puentes?", area: "Ingeniería y Tecnología" },
-            { id: 12, texto: "¿Te gustaría investigar curas para enfermedades o estudiar la genética?", area: "Ciencias de la Salud" },
-            { id: 13, texto: "¿Disfrutas planificando estrategias de marketing para dar a conocer un producto?", area: "Negocios y Administración" },
-            { id: 14, texto: "¿Te gustaría comprender a fondo el comportamiento humano y ayudar a las personas mediante terapia?", area: "Derecho y Ciencias Sociales" },
-            { id: 15, texto: "¿Te gusta la fotografía, la edición de video o el cine experimental?", area: "Arte y Diseño" }
+        const PREGUNTAS_REALES = [
+            { id: 1, texto: "Me gusta organizar y coordinar actividades en grupo.", area: "Empresarial" },
+            { id: 2, texto: "Disfruto resolver problemas matemáticos complejos.", area: "Ingeniería" },
+            { id: 3, texto: "Me interesa comprender problemas sociales de mi entorno.", area: "Sociales" },
+            { id: 4, texto: "Estoy dispuesto a atender a personas incluso cuando estoy cansado.", area: "Salud" },
+            { id: 5, texto: "Me gusta proponer ideas nuevas o diferentes.", area: "Empresarial" },
+            { id: 6, texto: "Me interesa cómo funcionan las empresas.", area: "Empresarial" },
+            { id: 7, texto: "Puedo observar sangre o heridas sin sentir rechazo intenso.", area: "Salud" },
+            { id: 8, texto: "Analizo problemas paso a paso antes de actuar.", area: "Ingeniería" },
+            { id: 9, texto: "Me gusta enseñar o ayudar a otros a aprender.", area: "Sociales" },
+            { id: 10, texto: "Me interesa entender cómo funcionan máquinas o sistemas.", area: "Ingeniería" },
+            { id: 11, texto: "Me siento cómodo liderando grupos.", area: "Empresarial" },
+            { id: 12, texto: "Disfruto leer o escribir.", area: "Sociales" },
+            { id: 13, texto: "Me interesa el cuidado de animales.", area: "Salud" },
+            { id: 14, texto: "Busco diferentes formas de resolver un problema.", area: "Ingeniería" },
+            { id: 15, texto: "Puedo escuchar a alguien angustiado sin perder la calma.", area: "Salud" },
+            { id: 16, texto: "Me interesa aprender idiomas.", area: "Sociales" },
+            { id: 17, texto: "Puedo tomar decisiones con información incompleta.", area: "Empresarial" },
+            { id: 18, texto: "Me interesa comprender cómo funciona el cuerpo humano.", area: "Salud" },
+            { id: 19, texto: "Me gusta debatir ideas defendiendo mi punto de vista.", area: "Sociales" },
+            { id: 20, texto: "Me gusta aplicar conocimientos a problemas reales.", area: "Ingeniería" },
+            { id: 21, texto: "Mantengo la calma bajo presión.", area: "Salud" },
+            { id: 22, texto: "Me interesa el uso de tecnología o sistemas digitales.", area: "Ingeniería" },
+            { id: 23, texto: "Me motiva ayudar a mejorar la realidad de otros.", area: "Sociales" },
+            { id: 24, texto: "Soy preciso al realizar cálculos.", area: "Ingeniería" },
+            { id: 25, texto: "Me interesa el diseño de espacios o ambientes.", area: "Ingeniería" },
+            { id: 26, texto: "Asumo las consecuencias de mis decisiones.", area: "Empresarial" },
+            { id: 27, texto: "Disfruto aprender temas de biología o química.", area: "Salud" },
+            { id: 28, texto: "Mantengo la concentración en tareas complejas.", area: "Ingeniería" },
+            { id: 29, texto: "Me cuesta expresar mis ideas en grupo.", area: "Sociales" },
+            { id: 30, texto: "Evito actividades con cálculos.", area: "Ingeniería" },
+            { id: 31, texto: "Me gusta analizar ventajas y desventajas antes de actuar.", area: "Empresarial" },
+            { id: 32, texto: "Me interesa trabajar con números aplicados (dinero, costos).", area: "Empresarial" },
+            { id: 33, texto: "Puedo explicar temas de manera clara a otros.", area: "Sociales" },
+            { id: 34, texto: "Actúo con rapidez ante emergencias.", area: "Salud" },
+            { id: 35, texto: "Me fijo en la funcionalidad de estructuras o espacios.", area: "Ingeniería" },
+            { id: 36, texto: "Cumplo con responsabilidades y plazos.", area: "Empresarial" },
+            { id: 37, texto: "Me interesa comprender normas o leyes.", area: "Sociales" },
+            { id: 38, texto: "Me esfuerzo por entender temas difíciles.", area: "Ingeniería" },
+            { id: 39, texto: "Me interesa participar en actividades sociales.", area: "Sociales" },
+            { id: 40, texto: "Controlo mis emociones en situaciones difíciles.", area: "Salud" },
+            { id: 41, texto: "Me interesa la gestión de recursos.", area: "Empresarial" },
+            { id: 42, texto: "Reviso mis resultados para evitar errores.", area: "Empresarial" },
+            { id: 43, texto: "Disfruto combinar creatividad con utilidad práctica.", area: "Ingeniería" },
+            { id: 44, texto: "Me interesa analizar datos para tomar decisiones.", area: "Empresarial" },
+            { id: 45, texto: "Prefiero evitar situaciones donde haya enfermedad.", area: "Salud" },
+            { id: 46, texto: "Me adapto con facilidad a herramientas tecnológicas.", area: "Ingeniería" },
+            { id: 47, texto: "Me interesa comprender el comportamiento humano.", area: "Sociales" },
+            { id: 48, texto: "Me gusta resolver problemas usando lógica.", area: "Ingeniería" },
+            { id: 49, texto: "Me gusta emprender proyectos.", area: "Empresarial" },
+            { id: 50, texto: "Me interesa el trabajo en laboratorio.", area: "Salud" },
+            { id: 51, texto: "Me gusta reflexionar sobre temas sociales.", area: "Sociales" },
+            { id: 52, texto: "Puedo mantener objetividad en situaciones emocionales.", area: "Salud" },
+            { id: 53, texto: "Me gusta planificar antes de actuar.", area: "Empresarial" },
+            { id: 54, texto: "Me interesa la ciencia aplicada.", area: "Ingeniería" },
+            { id: 55, texto: "Me interesa enseñar a niños.", area: "Sociales" },
+            { id: 56, texto: "Me gusta trabajar con presupuestos o dinero.", area: "Empresarial" },
+            { id: 57, texto: "No me incomoda tratar animales enfermos.", area: "Salud" },
+            { id: 58, texto: "Me gusta cuestionar la información antes de aceptarla.", area: "Sociales" },
+            { id: 59, texto: "Me cuesta tomar decisiones por temor a equivocarme.", area: "Empresarial" },
+            { id: 60, texto: "Me interesa mejorar procesos o sistemas.", area: "Ingeniería" }
         ];
 
-        const HISTORICO_MOCK = [
-            { 
-                id: '1', 
-                alumno: 'MATEO GONZÁLEZ', 
-                grado: '5to Año de Secundaria - Sección A', 
-                topArea: 'Ingeniería y Tecnología', 
-                puntaje: '85%', 
-                fecha: '2026-06-15', 
-                synced: true,
-                detalles: {
-                    "Ingeniería y Tecnología": "85%",
-                    "Ciencias de la Salud": "30%",
-                    "Negocios y Administración": "20%",
-                    "Derecho y Ciencias Sociales": "10%",
-                    "Arte y Diseño": "5%"
-                }
-            },
-            { 
-                id: '2', 
-                alumno: 'CAMILA QUIROGA', 
-                grado: '5to Año de Secundaria - Sección B', 
-                topArea: 'Ciencias de la Salud', 
-                puntaje: '92%', 
-                fecha: '2026-06-14', 
-                synced: true,
-                detalles: {
-                    "Ingeniería y Tecnología": "15%",
-                    "Ciencias de la Salud": "92%",
-                    "Negocios y Administración": "40%",
-                    "Derecho y Ciencias Sociales": "35%",
-                    "Arte y Diseño": "10%"
-                }
-            },
-            { 
-                id: '3', 
-                alumno: 'LUCAS VALENZUELA', 
-                grado: '5to Año de Secundaria - Sección A', 
-                topArea: 'Negocios y Administración', 
-                puntaje: '78%', 
-                fecha: '2026-06-13', 
-                synced: false,
-                detalles: {
-                    "Ingeniería y Tecnología": "40%",
-                    "Ciencias de la Salud": "10%",
-                    "Negocios y Administración": "78%",
-                    "Derecho y Ciencias Sociales": "50%",
-                    "Arte y Diseño": "25%"
-                }
-            }
-        ];
-
-        // === ESTADOS GENERALES ===
-        let currentRole = 'student'; 
-        let isAdminLoggedIn = false;
-        let activeAdminTab = 'questions';
-
-        // Estudiante
-        let studentInfo = { nombre: '', grado: '' };
-        let questions = localStorage.getItem('psicologo_banco_preguntas')
-            ? JSON.parse(localStorage.getItem('psicologo_banco_preguntas'))
-            : [...PREGUNTAS_INICIALES];
+        let studentInfo = { nombre: '', grado: '', seccion: '' };
+        let questions = [...PREGUNTAS_REALES];
         let answers = {};
         let currentQuizBlock = 0;
-        const questionsPerBlock = 5;
+        const questionsPerBlock = 10; // 6 bloques de 10
         let processedResults = [];
 
-        // Configuraciones editables (Globales e Individuales)
-        let schoolName = localStorage.getItem('psicologo_school_name') || 'COLEGIO NACIONAL DE LA REPÚBLICA';
-        let psychologistName = '';
-        let googleSheetsUrl = '';
-        let signatureUrl = null;
-        let adminPassword = 'PSI2026';
-
-        // Alumnos e Historial
-        let submissions = localStorage.getItem('psicologo_historial_alumnos') 
-            ? JSON.parse(localStorage.getItem('psicologo_historial_alumnos')) 
-            : [...HISTORICO_MOCK];
-
-        // Áreas Vocacionales
-        const areasVocacionales = [
-            "Ingeniería y Tecnología",
-            "Ciencias de la Salud",
-            "Negocios y Administración",
-            "Derecho y Ciencias Sociales",
-            "Arte y Diseño"
-        ];
-
-        // Edición de Preguntas
-        let editingQuestionId = null;
-
-        // Firma Canvas Variables
-        let isDrawing = false;
-        let canvas, ctx;
-
-        // === INICIO DE LA APLICACIÓN ===
-        window.onload = function() {
-            initSignatureCanvas();
-            loadSchoolConfig();
-            checkRememberedSession();
-            renderSubmissionsTable();
-            renderAdminQuestions();
+        const channelsMeta = {
+            "Salud": { maxQuestions: 13, maxScore: 39 },
+            "Ingeniería": { maxQuestions: 17, maxScore: 51 },
+            "Sociales": { maxQuestions: 14, maxScore: 42 },
+            "Empresarial": { maxQuestions: 16, maxScore: 48 }
         };
 
-        function getUserKey(name) {
-            const targetName = name || psychologistName;
-            if (!targetName) return 'psico_default';
-            return 'psico_' + targetName.toLowerCase().trim().replace(/[^a-z0-9]/g, '_');
-        }
-
-        function loadSchoolConfig() {
-            document.getElementById('header-school-subtitle').innerText = schoolName.toUpperCase();
-            document.getElementById('config-school-name').value = schoolName;
-        }
-
-        function checkRememberedSession() {
-            const rememberedToken = localStorage.getItem('psicologo_remember_token');
-            const rememberedName = localStorage.getItem('psicologo_nombre_activo');
-            if (rememberedToken === 'true' && rememberedName) {
-                isAdminLoggedIn = true;
-                psychologistName = rememberedName;
-                
-                const userKey = getUserKey(psychologistName);
-                googleSheetsUrl = localStorage.getItem(userKey + '_sheets_url') || '';
-                signatureUrl = localStorage.getItem(userKey + '_firma_digital') || null;
-                adminPassword = localStorage.getItem(userKey + '_password') || 'PSI2026';
-
-                document.getElementById('input-auth-name').value = psychologistName;
-                document.getElementById('config-psico-name').value = psychologistName;
-                document.getElementById('google-sheets-url-input').value = googleSheetsUrl;
-                updateSignaturePreview();
-                setRole('admin');
-                showToast(`Sesión reanudada de forma segura para ${psychologistName}.`);
+        window.onload = function() {
+            // Verificar permiso de descarga de JSON por URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('allowDownload') === 'true') {
+                document.getElementById('backup-container').classList.remove('hidden');
             }
-        }
 
-        // === NOTIFICACIÓN TOAST ===
+            // Cargar configuración de nombre del colegio
+            const colNombre = localStorage.getItem('colegio_nombre') || 'COLEGIO NACIONAL DE LA REPÚBLICA';
+            document.getElementById('welcome-colegio-sub').innerText = `Bienvenido a la plataforma oficial de orientación del ${colNombre}. Responde las preguntas de forma sincera para obtener tu reporte vocacional.`;
+        };
+
         function showToast(msg) {
             const toast = document.getElementById('toast');
             document.getElementById('toast-text').innerText = msg;
             toast.classList.remove('hidden');
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 4500);
+            setTimeout(() => { toast.classList.add('hidden'); }, 4500);
         }
 
-        // === SECCIÓN SECUNDARIA / DROPDOWN MANIPULATION ===
         function toggleCustomSectionInput() {
-            const selectValue = document.getElementById('student-section-select').value;
-            const container = document.getElementById('custom-section-container');
-            if (selectValue === 'custom') {
-                container.classList.remove('hidden');
+            const select = document.getElementById('select-student-section');
+            const customContainer = document.getElementById('custom-section-container');
+            if (select.value === 'OTRO') {
+                customContainer.classList.remove('hidden');
             } else {
-                container.classList.add('hidden');
-                document.getElementById('student-custom-section').value = '';
+                customContainer.classList.add('hidden');
+                document.getElementById('input-custom-section').value = '';
             }
         }
 
-        // === CONTROL DE ACCESO SEGURIDAD ===
-        function tryAccessAdmin() {
-            if (isAdminLoggedIn) {
-                setRole('admin');
-            } else {
-                document.getElementById('input-auth-name').value = psychologistName || '';
-                document.getElementById('input-auth-code').value = '';
-                document.getElementById('auth-error-msg').classList.add('hidden');
-                document.getElementById('modal-auth').classList.remove('hidden');
-            }
+        function forceUppercaseInput(element) {
+            element.value = element.value.toUpperCase();
         }
 
-        function verifyAccessCode() {
-            const nameInput = document.getElementById('input-auth-name').value.trim();
-            const passwordInput = document.getElementById('input-auth-code').value;
-            const rememberMe = document.getElementById('auth-remember-me').checked;
+        function startTest() {
+            const name = document.getElementById('input-student-name').value.trim();
+            const grade = document.getElementById('select-student-grade').value;
+            const sectionSelect = document.getElementById('select-student-section').value;
+            let section = sectionSelect;
 
-            if (!nameInput) {
-                showToast("Por favor, ingresa tu nombre de Psicólogo.");
+            if (!name || !grade || !sectionSelect) {
+                showToast("Por favor, completa todos tus datos antes de iniciar.");
                 return;
             }
 
-            const userKey = getUserKey(nameInput);
-            const storedPassword = localStorage.getItem(userKey + '_password') || 'PSI2026';
-
-            if (passwordInput === storedPassword) {
-                isAdminLoggedIn = true;
-                psychologistName = nameInput;
-                adminPassword = storedPassword;
-                
-                // Cargar datos del perfil de este psicólogo
-                googleSheetsUrl = localStorage.getItem(userKey + '_sheets_url') || '';
-                signatureUrl = localStorage.getItem(userKey + '_firma_digital') || null;
-
-                localStorage.setItem('psicologo_nombre_activo', psychologistName);
-                if (rememberMe) {
-                    localStorage.setItem('psicologo_remember_token', 'true');
-                } else {
-                    localStorage.removeItem('psicologo_remember_token');
-                }
-
-                setRole('admin');
-                closeAuthModal();
-                loadSchoolConfig();
-                
-                document.getElementById('config-psico-name').value = psychologistName;
-                document.getElementById('google-sheets-url-input').value = googleSheetsUrl;
-                updateSignaturePreview();
-                
-                showToast(`Sesión iniciada. Bienvenido ${psychologistName}.`);
-            } else {
-                document.getElementById('auth-error-msg').classList.remove('hidden');
-            }
-        }
-
-        function closeAuthModal() {
-            document.getElementById('modal-auth').classList.add('hidden');
-        }
-
-        function logout() {
-            isAdminLoggedIn = false;
-            localStorage.removeItem('psicologo_remember_token');
-            localStorage.removeItem('psicologo_nombre_activo');
-            
-            // Restablecer variables del psicólogo activo en memoria
-            psychologistName = '';
-            googleSheetsUrl = '';
-            signatureUrl = null;
-            adminPassword = 'PSI2026';
-
-            if (canvas) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-
-            setRole('student');
-            resetTest();
-            loadSchoolConfig();
-            updateSignaturePreview();
-            showToast("Sesión cerrada de forma segura. Datos protegidos.");
-        }
-
-        // === CONTROL DE ROLES ===
-        function setRole(role) {
-            currentRole = role;
-            const btnStudent = document.getElementById('btn-role-student');
-            const btnAdmin = document.getElementById('btn-role-admin');
-            const btnLogout = document.getElementById('btn-logout');
-
-            if (role === 'student') {
-                btnStudent.className = "bg-white text-indigo-700 shadow-sm px-4 py-2 rounded-lg text-xs font-bold transition-all";
-                btnAdmin.className = "text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5";
-                document.getElementById('admin-status-text').innerText = isAdminLoggedIn ? "Psicólogo (Admin) 🔓" : "Psicólogo (Admin) 🔒";
-                btnLogout.classList.add('hidden');
-
-                document.getElementById('student-view').classList.remove('hidden');
-                document.getElementById('admin-view').classList.add('hidden');
-                resetTest();
-            } else {
-                btnStudent.className = "text-slate-500 hover:text-slate-800 px-4 py-2 rounded-lg text-xs font-bold transition-all";
-                btnAdmin.className = "bg-white text-indigo-700 shadow-sm px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5";
-                document.getElementById('admin-status-text').innerText = "Panel Psicólogo 🔓";
-                btnLogout.classList.remove('hidden');
-
-                document.getElementById('student-view').classList.add('hidden');
-                document.getElementById('admin-view').classList.remove('hidden');
-                setAdminTab('questions');
-            }
-        }
-
-        // === CONTROL DE TABULADORES (ADMIN) ===
-        function setAdminTab(tab) {
-            activeAdminTab = tab;
-            const tabQuestions = document.getElementById('admin-tab-questions');
-            const tabSubmissions = document.getElementById('admin-tab-submissions');
-            const tabIntegration = document.getElementById('admin-tab-integration');
-
-            const btnQuestions = document.getElementById('tab-btn-questions');
-            const btnSubmissions = document.getElementById('tab-btn-submissions');
-            const btnIntegration = document.getElementById('tab-btn-integration');
-
-            tabQuestions.classList.add('hidden');
-            tabSubmissions.classList.add('hidden');
-            tabIntegration.classList.add('hidden');
-
-            btnQuestions.className = "bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all";
-            btnSubmissions.className = "bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all";
-            btnIntegration.className = "bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all";
-
-            if (tab === 'questions') {
-                tabQuestions.classList.remove('hidden');
-                btnQuestions.className = "bg-indigo-600 text-white shadow px-4 py-2 rounded-lg text-xs font-bold transition-all";
-                renderAdminQuestions();
-            } else if (tab === 'submissions') {
-                tabSubmissions.classList.remove('hidden');
-                btnSubmissions.className = "bg-indigo-600 text-white shadow px-4 py-2 rounded-lg text-xs font-bold transition-all";
-                renderSubmissionsTable();
-            } else if (tab === 'integration') {
-                tabIntegration.classList.remove('hidden');
-                btnIntegration.className = "bg-indigo-600 text-white shadow px-4 py-2 rounded-lg text-xs font-bold transition-all";
-            }
-        }
-
-        // === CONTROL DE TEST (ESTUDIANTE) ===
-        function startTest() {
-            const name = document.getElementById('student-name').value.trim();
-            const gradeSelect = document.getElementById('student-grade-select').value;
-            const sectionSelect = document.getElementById('student-section-select').value;
-            let finalSection = sectionSelect;
-
-            if (sectionSelect === 'custom') {
-                const customInput = document.getElementById('student-custom-section').value.trim();
-                if (!customInput) {
-                    showToast("Por favor, especifica la letra de tu sección escolar.");
+            if (sectionSelect === 'OTRO') {
+                const customSec = document.getElementById('input-custom-section').value.trim();
+                if (!customSec) {
+                    showToast("Por favor, especifica tu sección en el campo de texto.");
                     return;
                 }
-                finalSection = `Sección ${customInput}`;
+                section = customSec.toUpperCase();
             }
 
-            if (!name || !gradeSelect || !sectionSelect) {
-                showToast("Por favor, completa tu Nombre y selecciona tu Grado/Sección.");
-                return;
-            }
-
-            studentInfo = { nombre: name.toUpperCase(), grado: `${gradeSelect} - ${finalSection}` };
+            studentInfo = { nombre: name, grado: grade, seccion: section };
             answers = {};
             currentQuizBlock = 0;
 
             document.getElementById('step-welcome').classList.add('hidden');
             document.getElementById('step-quiz').classList.remove('hidden');
-            document.getElementById('step-results').classList.add('hidden');
 
             renderQuizBlock();
         }
@@ -1294,7 +393,7 @@
             const totalBlocks = Math.ceil(totalQuestions / questionsPerBlock);
 
             document.getElementById('quiz-block-title').innerText = `Bloque ${currentQuizBlock + 1} de ${totalBlocks}`;
-            document.getElementById('quiz-total-count').innerText = `${totalQuestions} preguntas en total`;
+            document.getElementById('quiz-total-count').innerText = `${totalQuestions} preguntas`;
             document.getElementById('quiz-answered-count').innerText = `${Object.keys(answers).length} respondidas`;
 
             const percentage = Math.round(((currentQuizBlock + 1) / totalBlocks) * 100);
@@ -1308,51 +407,41 @@
 
             for (let i = startIdx; i < endIdx; i++) {
                 const q = questions[i];
-                const activeSiClass = answers[q.id] === 'Si' ? 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-2 ring-emerald-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600';
-                const activeNoClass = answers[q.id] === 'No' ? 'bg-rose-50 border-rose-400 text-rose-800 ring-2 ring-rose-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600';
+                
+                // Corrección de clases de Tailwind oficiales para alto contraste en la escala de Likert
+                const activeMd = answers[q.id] === 'M.D' ? 'bg-indigo-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-400 font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+                const activeDa = answers[q.id] === 'D.A' ? 'bg-blue-500 text-white border-blue-500 shadow-md ring-2 ring-blue-300 font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+                const activeEd = answers[q.id] === 'E.D' ? 'bg-rose-500 text-white border-rose-500 shadow-md ring-2 ring-rose-300 font-bold' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
 
-                const html = `
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all animate-fade">
+                container.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <div class="flex gap-4">
-                            <span class="bg-indigo-50 text-indigo-700 font-extrabold rounded-lg w-8 h-8 flex items-center justify-center text-sm shrink-0">
-                                ${i + 1}
-                            </span>
+                            <span class="bg-indigo-50 text-indigo-700 font-extrabold rounded-lg w-8 h-8 flex items-center justify-center text-sm shrink-0">${i + 1}</span>
                             <div class="space-y-4 flex-grow">
-                                <p class="font-bold text-slate-800 text-base md:text-lg leading-relaxed">${q.texto}</p>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <button onclick="selectOption(${q.id}, 'Si')" class="py-3.5 px-6 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeSiClass}">
-                                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Sí, me interesa
+                                <p class="font-bold text-slate-800 text-base leading-relaxed">${q.texto}</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="selectOption(${q.id}, 'M.D')" class="py-2.5 px-2 rounded-xl border font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${activeMd}">
+                                        Muy de Acuerdo (M.D)
                                     </button>
-                                    <button onclick="selectOption(${q.id}, 'No')" class="py-3.5 px-6 rounded-xl border font-bold text-sm transition-all flex items-center justify-center gap-2 ${activeNoClass}">
-                                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                        No me interesa
+                                    <button onclick="selectOption(${q.id}, 'D.A')" class="py-2.5 px-2 rounded-xl border font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${activeDa}">
+                                        De Acuerdo (D.A)
+                                    </button>
+                                    <button onclick="selectOption(${q.id}, 'E.D')" class="py-2.5 px-2 rounded-xl border font-semibold text-xs transition-all flex items-center justify-center gap-1.5 ${activeEd}">
+                                        En Desacuerdo (E.D)
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
-                container.innerHTML += html;
             }
 
             document.getElementById('btn-quiz-prev').disabled = (currentQuizBlock === 0);
-            
             const btnNext = document.getElementById('btn-quiz-next');
             if (currentQuizBlock === totalBlocks - 1) {
-                btnNext.innerHTML = `Finalizar y Ver Resultados
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>`;
+                btnNext.innerText = "Finalizar y Enviar";
             } else {
-                btnNext.innerHTML = `Siguiente Sección
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                    </svg>`;
+                btnNext.innerText = "Siguiente Sección";
             }
         }
 
@@ -1370,7 +459,7 @@
                 const endIdx = Math.min(startIdx + questionsPerBlock, totalQuestions);
                 for (let i = startIdx; i < endIdx; i++) {
                     if (!answers[questions[i].id]) {
-                        showToast("Por favor, responde a todas las preguntas de esta sección antes de avanzar.");
+                        showToast("Por favor, responde todas las preguntas del bloque actual.");
                         return;
                     }
                 }
@@ -1386,676 +475,112 @@
             }
         }
 
-        // === ANÁLISIS DE RESULTADOS ===
-        function calculateResults() {
-            const count = {};
-            const maxPossible = {};
+        async function calculateResults() {
+            const scoreSum = { "Salud": 0, "Ingeniería": 0, "Sociales": 0, "Empresarial": 0 };
 
-            areasVocacionales.forEach(a => {
-                count[a] = 0;
-                maxPossible[a] = 0;
-            });
+            // Puntuación: M.D (3 pts), D.A (2 pts), E.D (1 pt)
+            const valMap = { "M.D": 3, "D.A": 2, "E.D": 1 };
+
+            // 1. Manejo de Ítems Inversos Detectados en TEST_VOCACIONAL
+            // Ítem 29 (Sociales), Ítem 30 (Ingeniería), Ítem 45 (Salud), Ítem 59 (Empresarial)
+            const inverseItems = [29, 30, 45, 59];
+            const valInverseMap = { "M.D": 1, "D.A": 2, "E.D": 3 };
 
             questions.forEach(q => {
-                maxPossible[q.area] = (maxPossible[q.area] || 0) + 1;
-                if (answers[q.id] === 'Si') {
-                    count[q.area] = (count[q.area] || 0) + 1;
+                const ansValue = answers[q.id];
+                if (ansValue) {
+                    const isInverse = inverseItems.includes(q.id);
+                    const pts = isInverse ? valInverseMap[ansValue] : valMap[ansValue];
+                    if (scoreSum[q.area] !== undefined) {
+                        scoreSum[q.area] += pts;
+                    }
                 }
             });
 
-            processedResults = areasVocacionales.map(area => {
-                const totalInArea = maxPossible[area] || 1;
-                const score = count[area];
-                const percentage = Math.round((score / totalInArea) * 100);
-                return { area, percentage, score, total: totalInArea };
+            // 2. Cálculo en Porcentaje de Afinidad Ponderado
+            processedResults = Object.keys(channelsMeta).map(area => {
+                const max = channelsMeta[area].maxScore;
+                const score = scoreSum[area];
+                const percentage = Math.round((score / max) * 100);
+                return { area, percentage, score, total: channelsMeta[area].maxQuestions };
             }).sort((a, b) => b.percentage - a.percentage);
 
-            document.getElementById('results-student-name').innerText = studentInfo.nombre;
-            document.getElementById('results-top-area').innerText = processedResults[0].area;
-            document.getElementById('results-top-percentage').innerText = `${processedResults[0].percentage}%`;
-
-            const otherContainer = document.getElementById('other-results-container');
-            otherContainer.innerHTML = '<h4 class="font-bold text-slate-600 text-xs uppercase tracking-wider text-left">Otras afinidades encontradas</h4>';
-
-            processedResults.slice(1).forEach(res => {
-                otherContainer.innerHTML += `
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                        <span class="font-semibold text-slate-700 text-sm">${res.area}</span>
-                        <div class="flex items-center gap-4">
-                            <div class="w-24 bg-slate-200 h-2 rounded-full overflow-hidden">
-                                <div class="bg-indigo-500 h-full" style="width: ${res.percentage}%"></div>
-                            </div>
-                            <span class="font-bold text-slate-800 text-sm w-10 text-right">${res.percentage}%</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            saveSubmission();
-
-            document.getElementById('step-quiz').classList.add('hidden');
-            document.getElementById('step-results').classList.remove('hidden');
-        }
-
-        async function saveSubmission() {
-            const newId = Date.now().toString();
-            
-            const detallesObj = {};
-            processedResults.forEach(res => {
-                detallesObj[res.area] = `${res.percentage}%`;
-            });
-
-            const newSub = {
-                id: newId,
-                alumno: studentInfo.nombre.toUpperCase(),
-                grado: studentInfo.grado,
+            const finalGradeSection = `${studentInfo.grado} - ${studentInfo.seccion}`;
+            const submissionPayload = {
+                id: Date.now().toString(),
+                alumno: studentInfo.nombre,
+                grado: finalGradeSection,
                 topArea: processedResults[0].area,
                 puntaje: `${processedResults[0].percentage}%`,
                 fecha: new Date().toISOString().split('T')[0],
                 synced: false,
-                detalles: detallesObj
+                desglose: processedResults
             };
 
-            if (googleSheetsUrl.trim()) {
+            // Enviar a Google Sheets (Si configurado)
+            const sheetsUrl = localStorage.getItem('psicologo_sheets_url');
+            if (sheetsUrl && sheetsUrl.trim()) {
                 try {
-                    const payload = {
-                        colegio: schoolName,
-                        alumno: studentInfo.nombre,
-                        grado: studentInfo.grado,
-                        resultadoTop: processedResults[0].area,
-                        porcentaje: `${processedResults[0].percentage}%`,
-                        resultadosCompletos: processedResults
-                    };
-
-                    await fetch(googleSheetsUrl, {
+                    await fetch(sheetsUrl, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                        body: JSON.stringify({
+                            alumno: studentInfo.nombre,
+                            grado: finalGradeSection,
+                            resultadoTop: processedResults[0].area,
+                            porcentaje: `${processedResults[0].percentage}%`,
+                            desgloseDetallado: JSON.stringify(processedResults)
+                        })
                     });
-
-                    newSub.synced = true;
-                    showToast("Resultados guardados localmente y sincronizados con Google Sheets.");
-                } catch (err) {
-                    console.error("Error sincronizando: ", err);
-                    showToast("Guardado localmente. La sincronización automática falló.");
-                }
-            } else {
-                showToast("Diagnóstico guardado de forma segura en tu navegador.");
-            }
-
-            submissions.unshift(newSub);
-            localStorage.setItem('psicologo_historial_alumnos', JSON.stringify(submissions));
-            renderSubmissionsTable();
-        }
-
-        function resetTest() {
-            document.getElementById('student-name').value = '';
-            document.getElementById('student-grade-select').value = '';
-            document.getElementById('student-section-select').value = '';
-            document.getElementById('student-custom-section').value = '';
-            document.getElementById('custom-section-container').classList.add('hidden');
-            document.getElementById('step-welcome').classList.remove('hidden');
-            document.getElementById('step-quiz').classList.add('hidden');
-            document.getElementById('step-results').classList.add('hidden');
-        }
-
-        // === GESTIÓN DE PREGUNTAS (ADMIN) ===
-        function renderAdminQuestions() {
-            const container = document.getElementById('questions-list');
-            container.innerHTML = '';
-
-            questions.forEach((q, idx) => {
-                container.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex justify-between items-start gap-4 hover:border-slate-300 transition-all">
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-slate-100 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded">#${idx + 1}</span>
-                                <span class="bg-indigo-50 text-indigo-700 text-[9px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">${q.area}</span>
-                            </div>
-                            <p class="text-sm font-semibold text-slate-800 leading-normal">${q.texto}</p>
-                        </div>
-                        
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="openEditQuestionModal(${q.id})" class="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition-all" title="Editar Pregunta">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                            </button>
-                            <button onclick="deleteQuestion(${q.id})" class="text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-all" title="Eliminar Pregunta">
-                                <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function openAddQuestionModal() {
-            editingQuestionId = null;
-            document.getElementById('question-editor-title').innerText = "Añadir Nueva Pregunta";
-            document.getElementById('input-question-text').value = '';
-            document.getElementById('select-question-area').value = "Ingeniería y Tecnología";
-            document.getElementById('modal-question-editor').classList.remove('hidden');
-        }
-
-        function openEditQuestionModal(qId) {
-            editingQuestionId = qId;
-            const q = questions.find(item => item.id === qId);
-            if (!q) return;
-
-            document.getElementById('question-editor-title').innerText = "Modificar Pregunta del Test";
-            document.getElementById('input-question-text').value = q.texto;
-            document.getElementById('select-question-area').value = q.area;
-            document.getElementById('modal-question-editor').classList.remove('hidden');
-        }
-
-        function closeQuestionEditorModal() {
-            document.getElementById('modal-question-editor').classList.add('hidden');
-        }
-
-        function saveQuestion() {
-            const text = document.getElementById('input-question-text').value.trim();
-            const area = document.getElementById('select-question-area').value;
-
-            if (!text) {
-                showToast("Por favor, introduce el texto de la pregunta.");
-                return;
-            }
-
-            if (editingQuestionId !== null) {
-                questions = questions.map(item => 
-                    item.id === editingQuestionId 
-                        ? { ...item, texto: text, area: area } 
-                        : item
-                );
-                showToast("Pregunta editada con éxito.");
-            } else {
-                const newQ = {
-                    id: Date.now(),
-                    texto: text,
-                    area: area
-                };
-                questions.push(newQ);
-                showToast("Nueva pregunta agregada.");
-            }
-
-            localStorage.setItem('psicologo_banco_preguntas', JSON.stringify(questions));
-            closeQuestionEditorModal();
-            renderAdminQuestions();
-        }
-
-        function deleteQuestion(qId) {
-            if (questions.length <= 5) {
-                showToast("No puedes eliminar más preguntas. Se requiere un mínimo de 5 para calcular el test.");
-                return;
-            }
-            questions = questions.filter(item => item.id !== qId);
-            localStorage.setItem('psicologo_banco_preguntas', JSON.stringify(questions));
-            showToast("Pregunta eliminada con éxito.");
-            renderAdminQuestions();
-        }
-
-        // === IMPORTACIÓN DE PREGUNTAS DE EXCEL (XLSX) ===
-        function handleExcelImport(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            if (!window.XLSX) {
-                showToast("El motor de análisis de Excel aún está cargando. Espere un momento.");
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = e.target.result;
-                    const workbook = XLSX.read(data, { type: 'binary' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                    if (rows.length < 2) {
-                        showToast("El archivo de Excel parece no tener registros válidos.");
-                        return;
-                    }
-
-                    const headers = rows[0].map(h => String(h).trim().toLowerCase());
-                    const colPreguntaIdx = headers.findIndex(h => h.includes('pregunta') || h.includes('texto') || h.includes('question'));
-                    const colAreaIdx = headers.findIndex(h => h.includes('área') || h.includes('area') || h.includes('categoria') || h.includes('categoría'));
-
-                    if (colPreguntaIdx === -1 || colAreaIdx === -1) {
-                        showToast("No se detectaron las columnas requeridas. Debe contener una columna 'Pregunta' y otra 'Área'.");
-                        return;
-                    }
-
-                    const nuevasPreguntas = [];
-                    let baseId = Date.now();
-
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        const texto = row[colPreguntaIdx];
-                        const areaRaw = row[colAreaIdx];
-
-                        if (texto && areaRaw) {
-                            let areaNormalizada = "Ingeniería y Tecnología";
-                            const areaString = String(areaRaw).trim().toLowerCase();
-
-                            if (areaString.includes('salud') || areaString.includes('médica') || areaString.includes('clinica')) {
-                                areaNormalizada = "Ciencias de la Salud";
-                            } else if (areaString.includes('negocio') || areaString.includes('admin') || areaString.includes('conta') || areaString.includes('empresa')) {
-                                areaNormalizada = "Negocios y Administración";
-                            } else if (areaString.includes('derecho') || areaString.includes('social') || areaString.includes('ley') || areaString.includes('psico')) {
-                                areaNormalizada = "Derecho y Ciencias Sociales";
-                            } else if (areaString.includes('arte') || areaString.includes('diseño') || areaString.includes('musica') || areaString.includes('diseno')) {
-                                areaNormalizada = "Arte y Diseño";
-                            }
-
-                            nuevasPreguntas.push({
-                                id: baseId++,
-                                texto: String(texto).trim(),
-                                area: areaNormalizada
-                            });
-                        }
-                    }
-
-                    if (nuevasPreguntas.length === 0) {
-                        showToast("No se detectaron preguntas válidas bajo el formato especificado.");
-                        return;
-                    }
-
-                    questions = [...questions, ...nuevasPreguntas];
-                    localStorage.setItem('psicologo_banco_preguntas', JSON.stringify(questions));
-                    showToast(`Sincronización exitosa. Se han importado ${nuevasPreguntas.length} preguntas.`);
-                    renderAdminQuestions();
-                    event.target.value = '';
+                    submissionPayload.synced = true;
+                    showToast("¡Respuestas enviadas y sincronizadas con éxito!");
                 } catch (err) {
                     console.error(err);
-                    showToast("No se pudo analizar el archivo. Compruebe la estructura de la tabla.");
+                    showToast("Enviado localmente. Sincronización remota pendiente.");
                 }
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        // === CONEXIÓN CON SHEETS CONFIG ===
-        function saveSheetsUrlConfig() {
-            const url = document.getElementById('google-sheets-url-input').value.trim();
-            googleSheetsUrl = url;
-            
-            const userKey = getUserKey();
-            localStorage.setItem(userKey + '_sheets_url', url);
-            showToast("Configuración del enlace de Google Sheets salvada con éxito para tu perfil.");
-        }
-
-        function saveInstitutionalConfig() {
-            const sc = document.getElementById('config-school-name').value.trim();
-            const ps = document.getElementById('config-psico-name').value.trim();
-
-            if (!sc || !ps) {
-                showToast("Por favor complete los nombres requeridos de la institución.");
-                return;
+            } else {
+                showToast("Evaluación guardada en la base de datos.");
             }
 
-            schoolName = sc;
-            localStorage.setItem('psicologo_school_name', schoolName);
-
-            // Si cambió el nombre del psicólogo activo, migramos sus configuraciones individuales
-            if (ps !== psychologistName && psychologistName !== '') {
-                const oldUserKey = getUserKey();
-                const newUserKey = getUserKey(ps);
-
-                localStorage.setItem(newUserKey + '_sheets_url', googleSheetsUrl);
-                localStorage.setItem(newUserKey + '_firma_digital', signatureUrl || '');
-                localStorage.setItem(newUserKey + '_password', adminPassword);
-
-                psychologistName = ps;
-                localStorage.setItem('psicologo_nombre_activo', psychologistName);
-            } else if (psychologistName === '') {
-                psychologistName = ps;
-                localStorage.setItem('psicologo_nombre_activo', psychologistName);
-            }
-
-            loadSchoolConfig();
-            document.getElementById('config-psico-name').value = psychologistName;
-            showToast("Datos institucionales actualizados correctamente.");
-        }
-
-        function updatePasswordConfig() {
-            const val = document.getElementById('config-new-password').value;
-            if (!val || val.length < 4) {
-                showToast("La contraseña debe tener al menos 4 caracteres.");
-                return;
-            }
-            adminPassword = val;
-            
-            const userKey = getUserKey();
-            localStorage.setItem(userKey + '_password', adminPassword);
-            document.getElementById('config-new-password').value = '';
-            showToast("Contraseña de administrador actualizada con éxito para tu perfil.");
-        }
-
-        // === EXPORTACIÓN DE RESULTADOS A EXCEL ===
-        function exportDailyToExcel() {
-            const today = new Date().toISOString().split('T')[0];
-            const dailySubs = submissions.filter(sub => sub.fecha === today);
-            if (dailySubs.length === 0) {
-                showToast("No se encontraron registros evaluados el día de hoy.");
-                return;
-            }
-            generateExcelFromData(dailySubs, `Reporte_Vocacional_Diario_${today}`);
-        }
-
-        function exportAllToExcel() {
-            if (submissions.length === 0) {
-                showToast("No hay registros en el historial para exportar.");
-                return;
-            }
-            generateExcelFromData(submissions, `Reporte_Vocacional_Historial_Completo`);
-        }
-
-        function generateExcelFromData(dataList, filename) {
-            try {
-                const dataToExport = dataList.map(sub => {
-                    return {
-                        "Fecha": sub.fecha || new Date().toISOString().split('T')[0],
-                        "Alumno": sub.alumno.toUpperCase(),
-                        "Grado y Sección": sub.grado,
-                        "Área Predominante": sub.topArea,
-                        "Afinidad %": sub.puntaje,
-                        "Ingeniería y Tecnología": sub.detalles?.["Ingeniería y Tecnología"] || "0%",
-                        "Ciencias de la Salud": sub.detalles?.["Ciencias de la Salud"] || "0%",
-                        "Negocios y Administración": sub.detalles?.["Negocios y Administración"] || "0%",
-                        "Derecho y Ciencias Sociales": sub.detalles?.["Derecho y Ciencias Sociales"] || "0%",
-                        "Arte y Diseño": sub.detalles?.["Arte y Diseño"] || "0%"
-                    };
-                });
-
-                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Test Vocacional");
-                XLSX.writeFile(workbook, `${filename}.xlsx`);
-                showToast("Archivo Excel generado y descargado exitosamente.");
-            } catch (err) {
-                console.error(err);
-                showToast("Ocurrió un error al exportar el archivo Excel.");
-            }
-        }
-
-        // === IMPORTACIÓN DE EXCEL PARA RE-ANÁLISIS/REVISIÓN ===
-        function importExcelForReview(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = e.target.result;
-                    const workbook = XLSX.read(data, { type: 'binary' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const rows = XLSX.utils.sheet_to_json(worksheet);
-
-                    if (rows.length === 0) {
-                        showToast("El archivo de Excel no contiene registros válidos.");
-                        return;
-                    }
-
-                    const firstRow = rows[0];
-                    if (!firstRow["Alumno"] || !firstRow["Grado y Sección"] || !firstRow["Área Predominante"]) {
-                        showToast("Formato de Excel inválido. Suba un archivo exportado por el sistema.");
-                        return;
-                    }
-
-                    const importedSubs = rows.map((row, idx) => {
-                        return {
-                            id: 'imported_' + idx + '_' + Date.now(),
-                            alumno: String(row["Alumno"]).toUpperCase(),
-                            grado: String(row["Grado y Sección"]),
-                            topArea: String(row["Área Predominante"]),
-                            puntaje: String(row["Afinidad %"]),
-                            fecha: String(row["Fecha"] || new Date().toISOString().split('T')[0]),
-                            synced: true,
-                            isImported: true,
-                            detalles: {
-                                "Ingeniería y Tecnología": row["Ingeniería y Tecnología"] || "0%",
-                                "Ciencias de la Salud": row["Ciencias de la Salud"] || "0%",
-                                "Negocios y Administración": row["Negocios y Administración"] || "0%",
-                                "Derecho y Ciencias Sociales": row["Derecho y Ciencias Sociales"] || "0%",
-                                "Arte y Diseño": row["Arte y Diseño"] || "0%"
-                            }
-                        };
-                    });
-
-                    submissions = importedSubs;
-                    renderSubmissionsTable();
-
-                    document.getElementById('imported-banner').classList.remove('hidden');
-                    document.getElementById('imported-count-text').innerText = `⚠️ Estás revisando ${importedSubs.length} registros cargados desde un Excel externo para análisis.`;
-
-                    showToast(`Se han importado ${importedSubs.length} registros de forma temporal para revisión.`);
-                    event.target.value = '';
-                } catch (err) {
-                    console.error(err);
-                    showToast("No se pudo procesar el archivo para revisión vocacional.");
-                }
-            };
-            reader.readAsBinaryString(file);
-        }
-
-        function restoreLocalSubmissions() {
-            submissions = localStorage.getItem('psicologo_historial_alumnos') 
+            // Guardar en localStorage
+            let currentHistory = localStorage.getItem('psicologo_historial_alumnos') 
                 ? JSON.parse(localStorage.getItem('psicologo_historial_alumnos')) 
-                : [...HISTORICO_MOCK];
-            renderSubmissionsTable();
-            document.getElementById('imported-banner').classList.add('hidden');
-            showToast("Historial local original restaurado con éxito.");
+                : [];
+            currentHistory.unshift(submissionPayload);
+            localStorage.setItem('psicologo_historial_alumnos', JSON.stringify(currentHistory));
+
+            // Renderizar interfaz final
+            document.getElementById('results-student-name').innerText = studentInfo.nombre;
+            document.getElementById('step-quiz').classList.add('hidden');
+            document.getElementById('step-results').classList.remove('hidden');
         }
 
-        // === TABLA DE REGISTROS DE EVALUACIÓN ===
-        function renderSubmissionsTable() {
-            const tbody = document.getElementById('submissions-tbody');
-            tbody.innerHTML = '';
-
-            submissions.forEach(sub => {
-                const syncBadge = sub.synced 
-                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Sincronizado
-                       </span>`
-                    : `<span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                        Solo Local
-                       </span>`;
-
-                const row = `
-                    <tr class="hover:bg-slate-50/50 border-b border-slate-100">
-                        <td class="px-4 py-3 font-bold text-slate-900 uppercase">${sub.alumno}</td>
-                        <td class="px-4 py-3 text-slate-500 font-semibold uppercase">${sub.grado}</td>
-                        <td class="px-4 py-3">
-                            <span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2.5 py-1 rounded-full">
-                                ${sub.topArea}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 font-bold text-indigo-600">${sub.puntaje}</td>
-                        <td class="px-4 py-3">${syncBadge}</td>
-                        <td class="px-4 py-3">
-                            <button onclick="viewIndividualReportById('${sub.id}')" class="text-indigo-600 hover:text-indigo-900 text-xs font-bold border border-indigo-200 px-3 py-1 rounded-lg hover:bg-indigo-50 transition-all">
-                                Ver Reporte PDF
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-        }
-
-        // === FIRMA DIGITAL (CANVAS & IMAGE PNG) ===
-        function initSignatureCanvas() {
-            canvas = document.getElementById('signature-canvas');
-            ctx = canvas.getContext('2d');
-            
-            canvas.addEventListener('mousedown', startDraw);
-            canvas.addEventListener('mousemove', drawing);
-            canvas.addEventListener('mouseup', endDraw);
-            canvas.addEventListener('mouseleave', endDraw);
-
-            canvas.addEventListener('touchstart', (e) => {
-                const t = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                ctx.beginPath();
-                ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top);
-                isDrawing = true;
-                e.preventDefault();
-            });
-            canvas.addEventListener('touchmove', (e) => {
-                if (!isDrawing) return;
-                const t = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top);
-                ctx.lineWidth = 2.5;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = '#1e3a8a';
-                ctx.stroke();
-                e.preventDefault();
-            });
-            canvas.addEventListener('touchend', () => isDrawing = false);
-
-            updateSignaturePreview();
-        }
-
-        function startDraw(e) {
-            const rect = canvas.getBoundingClientRect();
-            ctx.beginPath();
-            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-            isDrawing = true;
-        }
-
-        function drawing(e) {
-            if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#1e3a8a';
-            ctx.stroke();
-        }
-
-        function endDraw() {
-            isDrawing = false;
-        }
-
-        function clearSignatureCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            signatureUrl = null;
-            
-            const userKey = getUserKey();
-            localStorage.removeItem(userKey + '_firma_digital');
-            updateSignaturePreview();
-        }
-
-        function saveSignatureCanvas() {
-            const dataUrl = canvas.toDataURL('image/png');
-            signatureUrl = dataUrl;
-            
-            const userKey = getUserKey();
-            localStorage.setItem(userKey + '_firma_digital', dataUrl);
-            updateSignaturePreview();
-            showToast("Su firma ha sido digitalizada y guardada con éxito.");
-        }
-
-        function handleSignatureImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                signatureUrl = e.target.result;
-                
-                const userKey = getUserKey();
-                localStorage.setItem(userKey + '_firma_digital', signatureUrl);
-                updateSignaturePreview();
-                showToast("Firma de imagen PNG cargada con éxito.");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function updateSignaturePreview() {
-            const container = document.getElementById('signature-preview-container');
-            if (signatureUrl) {
-                container.innerHTML = `<img src="${signatureUrl}" alt="Firma del Psicólogo" class="max-h-20" />`;
-            } else {
-                container.innerHTML = `<span class="text-slate-400 text-xs">No hay firma cargada en el sistema.</span>`;
-            }
-        }
-
-        // === CONTROL DE REPORTE PDF ===
-        function openReportView() {
-            if (processedResults.length === 0) return;
-            const detallesObj = {};
-            processedResults.forEach(res => {
-                detallesObj[res.area] = `${res.percentage}%`;
-            });
-            viewIndividualReport(studentInfo.nombre, studentInfo.grado, processedResults[0].area, `${processedResults[0].percentage}%`, detallesObj);
-        }
-
-        function viewIndividualReportById(id) {
-            const sub = submissions.find(s => s.id === id);
-            if (!sub) return;
-            viewIndividualReport(sub.alumno, sub.grado, sub.topArea, sub.puntaje, sub.detalles);
-        }
-
-        function viewIndividualReport(name, grade, area, percent, details) {
-            document.getElementById('pdf-student-name').innerText = name.toUpperCase();
-            document.getElementById('pdf-student-grade').innerText = grade.toUpperCase();
-            document.getElementById('pdf-result-area').innerText = area;
-            document.getElementById('pdf-result-percent').innerText = percent;
-            
-            document.getElementById('pdf-card-area').innerText = area;
-            document.getElementById('pdf-card-percent').innerText = percent;
-
-            document.getElementById('pdf-school-header').innerText = schoolName.toUpperCase();
-            document.getElementById('pdf-psico-name').innerText = (psychologistName || "PSICÓLOGO COLEGIADO").toUpperCase();
-
-            const dateStr = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('pdf-date-issued').innerText = dateStr;
-
-            const breakdownContainer = document.getElementById('pdf-breakdown-container');
-            const breakdownList = document.getElementById('pdf-breakdown-list');
-            
-            if (details && Object.keys(details).length > 0) {
-                breakdownContainer.classList.remove('hidden');
-                breakdownList.innerHTML = '';
-                Object.entries(details).forEach(([areaName, val]) => {
-                    breakdownList.innerHTML += `
-                        <div class="flex justify-between border-b border-slate-200/50 pb-1">
-                            <span class="font-medium text-slate-600 text-[10px]">${areaName}:</span>
-                            <span class="font-extrabold text-slate-900 text-[10px]">${val}</span>
-                        </div>
-                    `;
+        function downloadBackupJson() {
+            try {
+                const finalGradeSection = `${studentInfo.grado} - ${studentInfo.seccion}`;
+                const payloadStr = JSON.stringify({
+                    id: Date.now().toString(),
+                    alumno: studentInfo.nombre,
+                    grado: finalGradeSection,
+                    topArea: processedResults[0].area,
+                    puntaje: `${processedResults[0].percentage}%`,
+                    fecha: new Date().toISOString().split('T')[0],
+                    desglose: processedResults
                 });
-            } else {
-                breakdownContainer.classList.add('hidden');
+
+                const blob = new Blob([payloadStr], { type: "application/json" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `Comprobante_Vocacional_${studentInfo.nombre.replace(/\s+/g, '_')}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("¡Archivo de respaldo descargado!");
+            } catch (err) {
+                showToast("No se pudo generar la descarga.");
             }
-
-            const sigPlacement = document.getElementById('pdf-signature-placement');
-            if (signatureUrl) {
-                sigPlacement.innerHTML = `<img src="${signatureUrl}" alt="Firma" class="h-12 object-contain" />`;
-            } else {
-                sigPlacement.innerHTML = `
-                    <div class="text-[8px] text-rose-500 font-bold border-2 border-dashed border-rose-300 rounded px-2 py-1 bg-rose-50">
-                        Firma Sin Cargar
-                    </div>`;
-            }
-
-            document.getElementById('modal-report').classList.remove('hidden');
-        }
-
-        function closeReportView() {
-            document.getElementById('modal-report').classList.add('hidden');
         }
     </script>
-
 </body>
 </html>
