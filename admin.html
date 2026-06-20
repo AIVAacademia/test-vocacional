@@ -28,10 +28,11 @@
                 left: 50% !important;
                 top: 0 !important;
                 transform: translateX(-50%) !important;
-                width: 210mm;
-                height: 297mm;
+                width: 210mm !important;
+                max-width: 210mm !important;
+                height: 297mm !important;
                 background: white !important;
-                padding: 1.6cm !important;
+                padding: 1.8cm 2cm !important; /* Márgenes ampliados elegantes */
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0px !important;
@@ -40,9 +41,20 @@
                 border-radius: 0px !important;
                 box-shadow: none !important;
             }
-            .no-print, #print-area .no-print {
+            /* Ocultamiento absoluto con máxima prioridad para evitar el recuadro rojo en impresión */
+            .no-print, 
+            .print\:hidden,
+            #print-area .no-print,
+            #print-area .print\:hidden,
+            #print-area .no-print *,
+            #print-area .print\:hidden * {
                 display: none !important;
                 visibility: hidden !important;
+                opacity: 0 !important;
+                height: 0 !important;
+                width: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
         .custom-scrollbar::-webkit-scrollbar {
@@ -503,7 +515,8 @@
 
             <!-- Contenido imprimible físico -->
             <div class="p-8 overflow-y-auto space-y-6 flex-grow bg-slate-100">
-                <div id="print-area" class="bg-white p-8 max-w-xl mx-auto space-y-8 text-left relative shadow-md border border-slate-200">
+                <!-- Se amplió el ancho de max-w-xl a max-w-2xl para ocupar mejor los márgenes de la página -->
+                <div id="print-area" class="bg-white p-8 md:p-10 max-w-2xl w-full mx-auto space-y-8 text-left relative shadow-md border border-slate-200">
                     
                     <!-- Membrete Escolar -->
                     <div class="flex justify-between items-start border-b-2 border-indigo-900 pb-4">
@@ -1452,7 +1465,7 @@
                 sigPlacement.innerHTML = `<img src="${signatureData}" alt="Firma" class="h-12 object-contain" />`;
             } else {
                 sigPlacement.innerHTML = `
-                    <div class="text-[8px] text-rose-500 font-bold border-2 border-dashed border-rose-300 rounded px-2 py-1 bg-rose-50 border-no-radius">
+                    <div class="text-[8px] text-rose-500 font-bold border-2 border-dashed border-rose-300 rounded px-2 py-1 bg-rose-50 border-no-radius no-print print:hidden">
                         Firma Sin Cargar
                     </div>`;
             }
